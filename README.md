@@ -1,11 +1,13 @@
-# 🤖 Bot de Minecraft com IA (Node.js + LangChain + Groq)
+# 🤖 Bot de Minecraft com IA (Arquitetura Escalável)
 
-Bot inteligente para Minecraft que usa LangChain e Groq LLaMA para tomar decisões autônomas no jogo.
+Bot inteligente para Minecraft que usa LangChain com provedores de IA intercambiáveis (Groq, Ollama, etc.) para tomar decisões autônomas no jogo.
 
 ## 🚀 Recursos
 
 - ✅ **100% Node.js/TypeScript** - Código moderno e type-safe
-- 🧠 **IA com LangChain + Groq** - Usa LLaMA 3.3 70B para decisões inteligentes
+- 🧠 **IA Modular** - Troque facilmente entre Groq, Ollama ou outros provedores
+- 🔍 **Validação com Zod** - Schemas robustos para ações do bot
+- 📝 **Prompts Configuráveis** - Templates de prompt fáceis de modificar
 - 🎮 **Controle total do Minecraft** - Mineflayer para todas as ações
 - 🔄 **Reconexão automática** - Se cair, reconecta sozinho
 - 💬 **Interação no chat** - Responde de forma sarcástica
@@ -15,39 +17,148 @@ Bot inteligente para Minecraft que usa LangChain e Groq LLaMA para tomar decisõ
 
 - Node.js 18+ instalado
 - Servidor Minecraft Java Edition rodando (local ou remoto)
-- Chave da API do Groq ([obtenha aqui](https://console.groq.com/keys))
+- Chave da API do Groq ([obtenha aqui](https://console.groq.com/keys)) ou Ollama instalado
 
 ## 🔧 Instalação
 
-### 1. Clone ou crie o projeto
+### 1. Clone ou baixe o projeto
 
 ```bash
-mkdir minecraft-bot-ia
-cd minecraft-bot-ia
+git clone https://github.com/jvras58/minecraft-langchain-ts-template.git
+cd minecraft-langchain-ts-template
 ```
 
-### 2. Crie a estrutura de pastas
+### 2. Instale as dependências
 
 ```bash
-mkdir src
+pnpm install
 ```
 
-### 3. Salve os arquivos
+### 3. Configure as variáveis de ambiente
 
-- `src/index.ts` - Código principal do bot
-- `package.json` - Dependências
-- `tsconfig.json` - Configuração TypeScript
-- `.env` - Variáveis de ambiente (copie do `.env.example`)
-
-### 4. Instale as dependências
+Copie o arquivo `.env.example` para `.env` e configure:
 
 ```bash
-npm install
+cp .env.example .env
 ```
 
-### 5. Configure a chave do Groq
+Edite o `.env` com suas configurações:
 
-Crie um arquivo `.env` na raiz do projeto:
+```env
+# Escolha o provedor de IA
+LLM_PROVIDER=groq  # ou 'ollama'
+
+# Para Groq
+GROQ_API_KEY=sua-chave-aqui
+
+# Para Ollama
+OLLAMA_MODEL=llama2
+
+# Configurações do Minecraft
+MINECRAFT_HOST=localhost
+MINECRAFT_PORT=25565
+BOT_USERNAME=MeuBot
+BOT_AUTH=offline
+```
+
+## 🏗️ Arquitetura
+
+O projeto usa uma arquitetura modular e escalável:
+
+```
+src/
+├── bot/              # Lógica específica do Minecraft
+│   ├── ActionExecutor.ts    # Executa ações do bot
+│   ├── BotManager.ts        # Gerencia conexão e eventos do bot
+│   ├── MovementManager.ts   # Controla movimento e navegação
+│   └── PerceptionManager.ts # Coleta dados do ambiente
+├── config/           # Configurações centralizadas
+├── core/             # Lógica principal da aplicação
+│   └── GameLoop.ts   # Loop principal de decisão e ação
+├── providers/        # Provedores de IA (Groq, Ollama, etc.)
+├── schemas/          # Validações Zod
+├── prompts/          # Templates de prompt
+├── types/            # Interfaces TypeScript
+└── utils/            # Utilitários
+    └── index.ts
+```
+
+### Adicionando um Novo Provedor de IA
+
+1. Crie uma nova classe em `src/providers/` estendendo `BaseLLMProvider`
+2. Adicione ao factory em `src/providers/index.ts`
+3. Configure no `.env` com `LLM_PROVIDER=novo_provedor`
+
+Exemplo para OpenAI:
+
+```typescript
+// src/providers/OpenAIProvider.ts
+export class OpenAIProvider extends BaseLLMProvider {
+  // implementação...
+}
+```
+
+## 🏗️ Arquitetura Modular
+
+O projeto segue uma arquitetura **hexagonal/modular** com responsabilidades bem definidas:
+
+### Camadas Principais
+
+- **Bot Layer** (`src/bot/`): Tudo relacionado ao Minecraft
+  - `BotManager`: Conexão, eventos e ciclo de vida
+  - `ActionExecutor`: Executa ações decididas pela IA
+  - `MovementManager`: Controle de movimento e navegação
+  - `PerceptionManager`: Coleta dados do ambiente
+
+- **Core Layer** (`src/core/`): Lógica de negócio principal
+  - `GameLoop`: Loop de percepção → pensamento → ação
+
+- **Infrastructure Layer**: Provedores externos
+  - LLM Providers: Groq, Ollama, etc.
+  - Configurações e utilitários
+
+### Benefícios da Arquitetura
+
+- ✅ **Testabilidade**: Cada módulo pode ser testado isoladamente
+- ✅ **Manutenibilidade**: Mudanças locais não afetam outros módulos
+- ✅ **Extensibilidade**: Fácil adicionar novos providers ou comportamentos
+- ✅ **Separação de Responsabilidades**: Cada classe tem uma função clara
+
+## 🚀 Como Usar
+
+### Desenvolvimento
+
+```bash
+pnpm run dev
+```
+
+### Produção
+
+```bash
+pnpm run build
+pnpm start
+```
+
+## 🎛️ Configurações
+
+### Trocando o Modelo de IA
+
+Para usar Ollama em vez de Groq:
+
+1. Instale e configure Ollama
+2. No `.env`, mude:
+   ```env
+   LLM_PROVIDER=ollama
+   OLLAMA_MODEL=llama3.2
+   ```
+
+### Modificando Prompts
+
+Edite `src/prompts/botPrompts.ts` para alterar o comportamento do bot.
+
+### Validações
+
+As ações do bot são validadas com Zod em `src/schemas/botAction.ts`.
 
 ```bash
 GROQ_API_KEY=sua-chave-aqui

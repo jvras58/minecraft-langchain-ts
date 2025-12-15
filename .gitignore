@@ -9,3 +9,6 @@ node_modules/
 
 # Environment files
 .env
+
+# Build outputs
+dist/

@@ -1,0 +1,56 @@
+// Exemplo: Como adicionar um novo comportamento ao bot
+// Este arquivo mostra como estender o ActionExecutor para adicionar novas ações
+
+import { Bot } from 'mineflayer';
+import { BotAction } from '../types';
+import { MovementManager } from './MovementManager';
+
+export class ExtendedActionExecutor {
+  private bot: Bot;
+  private movementManager: MovementManager;
+
+  constructor(bot: Bot) {
+    this.bot = bot;
+    this.movementManager = new MovementManager(bot);
+  }
+
+  async executarAcao(decisao: BotAction): Promise<void> {
+    try {
+      switch (decisao.acao) {
+        // Ações existentes...
+        case 'FALAR':
+          // ... implementação existente
+          break;
+
+        // Nova ação: MINERAR
+        case 'MINERAR':
+          await this.minerar(decisao.bloco);
+          break;
+
+        // Nova ação: CONSTRUIR
+        case 'CONSTRUIR':
+          await this.construir(decisao.item);
+          break;
+
+        // ... outras ações
+      }
+    } catch (erro) {
+      console.error('❌ Erro ao executar ação:', erro);
+    }
+  }
+
+  private async minerar(bloco?: string): Promise<void> {
+    // Implementação de mineração
+    console.log(`⛏️  Minerando ${bloco || 'bloco próximo'}...`);
+    // Lógica de mineração aqui
+  }
+
+  private async construir(item?: string): Promise<void> {
+    // Implementação de construção
+    console.log(`🔨 Construindo com ${item || 'item'}`);
+    // Lógica de construção aqui
+  }
+}
+
+// Para usar, atualize o schema em src/schemas/botAction.ts:
+// acao: z.enum(['FALAR', 'ANDAR', 'PULAR', 'OLHAR', 'EXPLORAR', 'PARAR', 'NADA', 'MINERAR', 'CONSTRUIR'])
