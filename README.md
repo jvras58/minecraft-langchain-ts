@@ -86,14 +86,13 @@ src/
 
 ### Adicionando um Novo Provedor de IA
 
-1. Crie uma nova classe em `src/providers/` estendendo `BaseLLMProvider`
-2. Adicione ao factory em `src/providers/index.ts`
-3. Configure no `.env` com `LLM_PROVIDER=novo_provedor`
+1. Crie uma nova classe em `src/providers/providers` estendendo `BaseLLMProvider`
+2. Configure no `.env` com `LLM_PROVIDER=novo_provedor`
 
 Exemplo para OpenAI:
 
 ```typescript
-// src/providers/OpenAIProvider.ts
+// src/providers/providers/OpenAIProvider.ts
 export class OpenAIProvider extends BaseLLMProvider {
   // implementação...
 }
@@ -150,8 +149,9 @@ Para usar Ollama em vez de Groq:
 2. No `.env`, mude:
    ```env
    LLM_PROVIDER=ollama
-   OLLAMA_MODEL=llama3.2
+   OLLAMA_MODEL=qwen3:8b
    ```
+> Para descobrir seus modelos use o comando: ollama list
 
 ### Modificando Prompts
 
@@ -245,10 +245,10 @@ O bot opera em um loop contínuo:
 
 ### Mudar a personalidade
 
-Edite o prompt do sistema em `src/index.ts`:
+Edite o prompt do sistema em `src/prompt/botPrompts.ts`:
 
 ```typescript
-const promptTemplate = ChatPromptTemplate.fromMessages([
+([
   [
     'system',
     `Você é um bot [SUA PERSONALIDADE AQUI].
@@ -283,6 +283,3 @@ MIT
 - [LangChain](https://www.langchain.com/)
 - [Groq](https://groq.com/)
 
----
-
-**Divirta-se! 🎮🤖**
