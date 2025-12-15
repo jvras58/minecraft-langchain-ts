@@ -48,10 +48,11 @@ Edite o `.env` com suas configurações:
 # Escolha o provedor de IA
 LLM_PROVIDER=groq  # ou 'ollama'
 
-# Para Groq
+# Para Groq (na escolha de um modelo que não esteja disponivel localmente e obrigatorio passar a key)
 GROQ_API_KEY=sua-chave-aqui
 
-# Para Ollama
+# Para Ollama(caso opte por uma versão local é necessario passar corretamente o modelo)
+# o olhama oferece o olhama list para mostrar os modelos disponiveis localmente instalados.
 OLLAMA_MODEL=llama2
 
 # Configurações do Minecraft
@@ -160,16 +161,12 @@ Edite `src/prompts/botPrompts.ts` para alterar o comportamento do bot.
 
 As ações do bot são validadas com Zod em `src/schemas/botAction.ts`.
 
-```bash
-GROQ_API_KEY=sua-chave-aqui
-```
-
 ## ▶️ Como Executar
 
 ### Modo desenvolvimento (com hot reload)
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### Modo produção
@@ -184,16 +181,13 @@ npm start
 
 ## ⚙️ Configuração
 
-Edite as configurações no arquivo `src/index.ts`:
+Edite as configurações da conexão com o servidor do minecrafit:
 
-```typescript
-const botConfig: BotConfig = {
-  host: 'localhost',        // IP do servidor
-  port: 25565,              // Porta do servidor
-  username: 'AgenteGroq',   // Nome do bot
-  auth: 'offline',          // 'offline' ou 'microsoft'
-  checkTimeoutInterval: 60 * 1000,
-};
+```bash
+MINECRAFT_HOST=localhost
+MINECRAFT_PORT=25565
+BOT_USERNAME=AgenteBot
+BOT_AUTH=offline
 ```
 
 ## 🎮 Como Funciona
