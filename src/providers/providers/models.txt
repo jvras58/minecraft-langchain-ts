@@ -1,0 +1,4 @@
+Modelos compatíveis com o LangChain:
+
+https://docs.langchain.com/oss/javascript/integrations/providers/overview
+
