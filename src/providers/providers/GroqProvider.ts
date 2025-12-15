@@ -17,7 +17,6 @@ export class GroqProvider extends BaseLLMProvider {
   }
 
   async invoke(variables: Record<string, any>): Promise<string> {
-    // Construir a mensagem human com as variáveis substituídas
     const humanMessage = this.promptTemplate.human
       .replace('{contexto}', variables.contexto || '')
       .replace('{ultimaAcao}', variables.ultimaAcao || '')

@@ -6,6 +6,7 @@ export class OllamaProvider extends BaseLLMProvider {
   private llm: ChatOllama;
   private promptTemplate: PromptTemplate;
 
+  // TODO: Testar rodando o Ollama localmente para ver se é compativel
   constructor(modelName: string, promptTemplate: PromptTemplate) {
     super();
     this.llm = new ChatOllama({
@@ -16,7 +17,6 @@ export class OllamaProvider extends BaseLLMProvider {
   }
 
   async invoke(variables: Record<string, any>): Promise<string> {
-    // Construir a mensagem human com as variáveis substituídas
     const humanMessage = this.promptTemplate.human
       .replace('{contexto}', variables.contexto || '')
       .replace('{ultimaAcao}', variables.ultimaAcao || '')
