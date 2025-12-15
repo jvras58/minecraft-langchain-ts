@@ -1,15 +1,16 @@
-import { ChatOllama } from '@langchain/ollama';
-import { BaseLLMProvider } from './LLMProvider';
-import { PromptTemplate } from '../types';
+import { ChatGroq } from '@langchain/groq';
+import { BaseLLMProvider } from '../LLMProvider';
+import { PromptTemplate } from '../../types/types';
 
-export class OllamaProvider extends BaseLLMProvider {
-  private llm: ChatOllama;
+export class GroqProvider extends BaseLLMProvider {
+  private llm: ChatGroq;
   private promptTemplate: PromptTemplate;
 
-  constructor(modelName: string, promptTemplate: PromptTemplate) {
+  constructor(apiKey: string, promptTemplate: PromptTemplate) {
     super();
-    this.llm = new ChatOllama({
-      model: modelName,
+    this.llm = new ChatGroq({
+      apiKey,
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.8,
     });
     this.promptTemplate = promptTemplate;

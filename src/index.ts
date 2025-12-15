@@ -1,12 +1,12 @@
 import 'dotenv/config';
 
-import { LLMProvider } from './types';
+import { LLMProvider } from './types/types';
 import { createLLMProvider } from './providers';
 import { botPromptTemplate } from './prompts/botPrompts';
-import { botConfig, llmConfig } from './config';
+import { botConfig, llmConfig } from './config/settings';
 import { BotManager } from './bot/BotManager';
 import { GameLoop } from './core/GameLoop';
-import { sleep } from './utils';
+import { sleep } from './utils/sleep';
 
 const llmProvider: LLMProvider = createLLMProvider(llmConfig.provider, llmConfig[llmConfig.provider as keyof typeof llmConfig], botPromptTemplate);
 const botManager = new BotManager(botConfig);

@@ -1,4 +1,4 @@
-import { BotConfig } from '../types';
+import { BotConfig } from '../types/types';
 
 export const botConfig: BotConfig = {
   host: process.env.MINECRAFT_HOST || 'localhost',

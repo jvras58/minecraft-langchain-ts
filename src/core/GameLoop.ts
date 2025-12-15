@@ -1,9 +1,9 @@
-import { BotAction, LLMProvider } from '../types';
+import { BotAction, LLMProvider } from '../types/types';
 import { BotManager } from '../bot/BotManager';
 import { ActionExecutor } from '../bot/ActionExecutor';
 import { PerceptionManager } from '../bot/PerceptionManager';
 import { botActionSchema } from '../schemas/botAction';
-import { sleep } from '../utils';
+import { sleep } from '../utils/sleep';
 
 export class GameLoop {
   private botManager: BotManager;

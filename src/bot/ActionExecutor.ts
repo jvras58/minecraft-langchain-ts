@@ -1,5 +1,5 @@
 import { Bot } from 'mineflayer';
-import { BotAction } from '../types';
+import { BotAction } from '../types/types';
 import { MovementManager } from './MovementManager';
 
 export class ActionExecutor {
