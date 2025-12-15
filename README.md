@@ -279,6 +279,7 @@ MIT
 ## 🙏 Créditos
 
 - [Mineflayer](https://github.com/PrismarineJS/mineflayer)
+- [Modelos Disponiveis](https://docs.langchain.com/oss/javascript/integrations/providers/overview)
 - [LangChain](https://www.langchain.com/)
 - [Groq](https://groq.com/)
 
