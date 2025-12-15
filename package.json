@@ -1,0 +1,35 @@
+{
+  "name": "minecraft-langchain-template",
+  "version": "1.0.0",
+  "description": "Bot de Minecraft com IA usando Groq e LangChain",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "minecraft",
+    "bot",
+    "ai",
+    "groq",
+    "langchain"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/groq": "^0.1.0",
+    "dotenv": "^17.2.3",
+    "mineflayer": "^4.20.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

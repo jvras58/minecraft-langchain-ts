@@ -1,0 +1,11 @@
+# Virtual environments
+.venv
+
+# node_modules
+node_modules/
+
+# Logs files
+*.log
+
+# Environment files
+.env
