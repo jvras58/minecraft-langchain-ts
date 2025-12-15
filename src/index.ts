@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import { LLMProvider } from './types/types';
-import { createLLMProvider } from './providers';
+import { createLLMProvider } from './providers/CreateLLMProvider';
 import { botPromptTemplate } from './prompts/botPrompts';
 import { botConfig, llmConfig } from './config/settings';
 import { BotManager } from './bot/BotManager';
