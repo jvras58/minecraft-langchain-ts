@@ -12,3 +12,11 @@ node_modules/
 
 # Build outputs
 dist/
+
+# files created by ServidorMinecraft
+ServidorMinecraft/*
+!ServidorMinecraft/Leia-me.txt
+!ServidorMinecraft/README.md
+!ServidorMinecraft/start.bat
+!ServidorMinecraft/_puglins_viaversion
+!ServidorMinecraft/paper.jar
