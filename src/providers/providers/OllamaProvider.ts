@@ -6,7 +6,6 @@ export class OllamaProvider extends BaseLLMProvider {
   private llm: ChatOllama;
   private promptTemplate: PromptTemplate;
 
-  // TODO: Testar rodando o Ollama localmente para ver se é compativel
   constructor(modelName: string, promptTemplate: PromptTemplate) {
     super();
     this.llm = new ChatOllama({
