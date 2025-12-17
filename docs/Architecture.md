@@ -1,4 +1,4 @@
-Este documento descreve a arquitetura do projeto usando o modelo C4 (Context, Container, Component, Code) com diagramas Mermaid. O projeto é um bot autônomo para Minecraft que utiliza IA para tomar decisões, baseado em percepções do ambiente.
+Este documento descreve a arquitetura do projeto usando o [modelo C4](https://c4model.com/diagrams) (Context, Container, Component, Code) com diagramas [Mermaid](https://www.mermaidchart.com/app/dashboard). O projeto é um bot autônomo para Minecraft que utiliza IA para tomar decisões, baseado em percepções do ambiente.
 
 ## 1. Context Diagram (C1)
 
@@ -36,7 +36,7 @@ graph TD
     end
     M[Servidor Minecraft] --> K
     N[Provedor de IA] --> J
-    O[Configurações (.env)] --> F
+    O["Configurações (.env)"] --> F
 ```
 
 - **Aplicação Node.js**: Executa o bot em TypeScript.
@@ -68,11 +68,11 @@ graph TD
     K[BotManager] --> L[createBot]
     L --> M[mineflayer.createBot]
     M --> N[setupEventHandlers]
-    N --> O[bot.on('spawn')]
-    N --> P[bot.on('chat')]
-    N --> Q[bot.on('death')]
-    N --> R[bot.on('end')]
-    N --> S[bot.on('physicsTick')]
+    N --> O["bot.on('spawn')"]
+    N --> P["bot.on('chat')"]
+    N --> Q["bot.on('death')"]
+    N --> R["bot.on('end')"]
+    N --> S["bot.on('physicsTick')"]
 ```
 
 - **GameLoop**: Loop principal com métodos para executar o ciclo.
@@ -137,3 +137,5 @@ classDiagram
 
 - Relações baseadas em dependências: GameLoop usa BotManager, ActionExecutor, etc.
 - Provedores de IA herdam de BaseLLMProvider.
+
+- Use a [extensão](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) para reproduzir os diagramas direto pelo readme
