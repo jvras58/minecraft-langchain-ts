@@ -238,8 +238,8 @@ O bot opera em um loop contínuo:
 ### Bot não responde
 
 - Verifique os logs no console
-- O bot pode demorar alguns segundos para pensar
-- Certifique-se que há créditos na conta Groq
+- O bot pode demorar alguns segundos para pensar(Dependendo se for modelo local demora mais ainda...)
+- Certifique-se que há créditos na conta Groq(Se for usar o modelo online)
 
 ## 📝 Personalização
 
@@ -277,6 +277,8 @@ await sleep(5000); // <- Mude aqui
 MIT
 
 ## 🙏 Créditos
+
+- jvras58
 
 - [Mineflayer](https://github.com/PrismarineJS/mineflayer)
 - [Modelos Disponiveis](https://docs.langchain.com/oss/javascript/integrations/providers/overview)
