@@ -1,6 +1,8 @@
 import { ChatGroq } from '@langchain/groq';
 import { BaseLLMProvider } from '../LLMProvider';
 import { PromptTemplate } from '../../types/types';
+import { collectAndStoreMetric } from '../../utils/metrics';
+import perf from 'performance-now';
 
 export class GroqProvider extends BaseLLMProvider {
   private llm: ChatGroq;
@@ -27,7 +29,24 @@ export class GroqProvider extends BaseLLMProvider {
       { role: 'user', content: humanMessage }
     ];
 
+    const start = perf();
     const result = await this.llm.invoke(messages);
+    const end = perf();
+    const responseTime = (end - start) / 1000; // em segundos
+
+    // Estimar tokens (simples estimativa: 1 token ~ 4 caracteres)
+    const inputText = this.promptTemplate.system + humanMessage;
+    const inputTokens = Math.ceil(inputText.length / 4);
+    const outputTokens = Math.ceil((result.content as string).length / 4);
+
+    await collectAndStoreMetric({
+      provider: 'Groq',
+      model: 'llama-3.3-70b-versatile',
+      inputTokens,
+      outputTokens,
+      responseTime,
+    });
+
     return result.content as string;
   }
 }

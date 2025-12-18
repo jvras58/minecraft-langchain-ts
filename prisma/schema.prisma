@@ -1,0 +1,30 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// TODO: Add UserBot para podermos indentificar qual bot gerou a métrica
+// model UserBot {
+//   id      String   @id @default(cuid())
+//   name    String?
+//   metrics Metric[]
+// }
+
+model Metric {
+  id           String   @id @default(cuid())
+  // userBotId    String
+  timestamp    DateTime @default(now())
+  provider     String
+  model        String
+  inputTokens  Int?
+  outputTokens Int?
+  responseTime Float
+  environment  String // JSON string with hardware details
+  // userBot      UserBot  @relation(fields: [userBotId], references: [id])
+}
