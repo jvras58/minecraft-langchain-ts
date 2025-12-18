@@ -15,7 +15,7 @@ const gameLoop = new GameLoop(botManager, llmProvider);
 async function main(): Promise<void> {
   console.log('🤖 Iniciando Bot de Minecraft com IA...\n');
 
-  botManager.createBot();
+  await botManager.createBot();
 
   await sleep(2000);
 

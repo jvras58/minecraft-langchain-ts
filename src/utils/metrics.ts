@@ -7,6 +7,21 @@ export interface MetricData {
   inputTokens?: number;
   outputTokens?: number;
   responseTime: number;
+  userBotId: string;
+}
+
+export async function getOrCreateUserBot(name: string): Promise<string> {
+  let userBot = await prisma.userBot.findFirst({
+    where: { name },
+  });
+
+  if (!userBot) {
+    userBot = await prisma.userBot.create({
+      data: { name },
+    });
+  }
+
+  return userBot.id;
 }
 
 export async function collectAndStoreMetric(data: MetricData) {

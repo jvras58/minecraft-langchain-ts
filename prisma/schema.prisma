@@ -5,20 +5,22 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// FIXME: FAZER O DOWNGRADE DA VERSÃO 7 PARA A 5
 datasource db {
   provider = "sqlite"
+  // url      = "file:./dev.db"
 }
 
 // TODO: Add UserBot para podermos indentificar qual bot gerou a métrica
-// model UserBot {
-//   id      String   @id @default(cuid())
-//   name    String?
-//   metrics Metric[]
-// }
+model UserBot {
+  id      String   @id @default(cuid())
+  name    String?
+  metrics Metric[]
+}
 
 model Metric {
   id           String   @id @default(cuid())
-  // userBotId    String
+  userBotId    String
   timestamp    DateTime @default(now())
   provider     String
   model        String
@@ -26,5 +28,5 @@ model Metric {
   outputTokens Int?
   responseTime Float
   environment  String // JSON string with hardware details
-  // userBot      UserBot  @relation(fields: [userBotId], references: [id])
+  userBot      UserBot  @relation(fields: [userBotId], references: [id])
 }
