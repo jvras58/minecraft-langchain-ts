@@ -39,6 +39,10 @@ interface DynamicMetrics {
   gpuTemp: number | null;
 }
 
+/**
+ * Coleta informações do Bot
+ * Inclui: nome do bot
+ */
 export async function getOrCreateUserBot(name: string): Promise<string> {
   let userBot = await prisma.userBot.findFirst({
     where: { name },
