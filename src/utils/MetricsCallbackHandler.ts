@@ -7,7 +7,6 @@ export interface MetricsCallbackConfig {
     provider: string;
     model: string;
     userBotId: string;
-    /** Contexto da tarefa: "combat", "mining", "exploration", "chat", etc. */
     taskName?: string;
 }
 
@@ -46,12 +45,10 @@ export class MetricsCallbackHandler extends BaseCallbackHandler {
 
     async handleLLMEnd(output: LLMResult, _runId: string): Promise<void> {
         const endTime = performance.now();
-        const responseTime = (endTime - this.startTime) / 1000; // em segundos
+        const responseTime = (endTime - this.startTime) / 1000;
 
-        // Extrai tokens usando abordagem híbrida
         const tokenUsage = this.extractTokenUsage(output);
 
-        // Fallback: estima tokens se não conseguiu extrair
         if (!tokenUsage.outputTokens) {
             const generations = output.generations?.[0]?.[0];
             if (generations) {
@@ -102,7 +99,6 @@ export class MetricsCallbackHandler extends BaseCallbackHandler {
 
         // Fonte 3: Ollama específico (pode ter formato diferente)
         if (llmOutput?.model) {
-            // Ollama retorna no formato: { prompt_eval_count, eval_count }
             const promptTokens = llmOutput.prompt_eval_count;
             const completionTokens = llmOutput.eval_count;
             if (promptTokens !== undefined || completionTokens !== undefined) {
