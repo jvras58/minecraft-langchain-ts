@@ -1,6 +1,7 @@
 import mineflayer, { Bot } from 'mineflayer';
 import { BotConfig } from '../types/types';
 import { MovementManager } from './MovementManager';
+import { getOrCreateUserBot } from '../utils/metrics';
 
 export class BotManager {
   private bot: Bot | null = null;
@@ -8,6 +9,7 @@ export class BotManager {
   private connected = false;
   private onConnected?: () => void;
   private onDisconnected?: () => void;
+  public userBotId: string | null = null;
 
   constructor(config: BotConfig) {
     this.config = config;
@@ -18,8 +20,11 @@ export class BotManager {
     this.onDisconnected = onDisconnected;
   }
 
-  createBot(): void {
+  async createBot(): Promise<void> {
     console.log('🔌 Conectando ao servidor...');
+
+    // Inicializar UserBot
+    this.userBotId = await getOrCreateUserBot(this.config.username);
 
     this.bot = mineflayer.createBot(this.config);
 

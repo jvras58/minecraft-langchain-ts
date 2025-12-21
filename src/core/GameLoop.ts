@@ -72,7 +72,7 @@ export class GameLoop {
         contexto,
         ultimaAcao: this.ultimaAcao,
         contadorAcoes: JSON.stringify(this.contadorAcoes),
-      });
+      }, this.botManager.userBotId!);
 
       const textoLimpo = resposta
         .replace(/```json/g, '')
