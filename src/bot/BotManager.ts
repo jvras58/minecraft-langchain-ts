@@ -3,6 +3,10 @@ import { BotConfig } from '../types/types';
 import { MovementManager } from './MovementManager';
 import { getOrCreateUserBot } from '../utils/metrics';
 
+/**
+ * Gerencia a criação e gerenciamento do bot
+ * Inclui: conexão, desconexão, eventos e movimentos
+ */
 export class BotManager {
   private bot: Bot | null = null;
   private config: BotConfig;
@@ -23,7 +27,6 @@ export class BotManager {
   async createBot(): Promise<void> {
     console.log('🔌 Conectando ao servidor...');
 
-    // Inicializar UserBot
     this.userBotId = await getOrCreateUserBot(this.config.username);
 
     this.bot = mineflayer.createBot(this.config);
@@ -78,11 +81,9 @@ export class BotManager {
       console.log(`👢 Fui kickado! Razão: ${razao}`);
     });
 
-    // Evento: Colidiu com algo
     this.bot.on('physicsTick', () => {
       if (!this.bot || !this.isConnected()) return;
 
-      // Se está colidindo, tenta pular
       if (this.bot.entity.onGround && this.bot.entity.velocity.y === 0) {
         const estaAndando =
           this.bot.controlState.forward ||
@@ -90,11 +91,9 @@ export class BotManager {
           this.bot.controlState.left ||
           this.bot.controlState.right;
 
-        // Se está tentando andar mas não se move, pula
         if (estaAndando) {
           const vel = this.bot.entity.velocity;
           if (Math.abs(vel.x) < 0.01 && Math.abs(vel.z) < 0.01) {
-            // Às vezes pula para superar obstáculos
             if (Math.random() > 0.7) {
               this.bot.setControlState('jump', true);
             }

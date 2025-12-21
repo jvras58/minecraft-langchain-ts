@@ -2,16 +2,19 @@ import { Bot } from 'mineflayer';
 import { BotAction } from '../types/types';
 import { MovementManager } from './MovementManager';
 
-/** Resultado da execução de uma ação */
 export interface ActionResult {
   success: boolean;
   action: string;
   direction?: string;
   content?: string;
   errorMessage?: string;
-  executionTime: number; // em ms
+  executionTime: number;
 }
 
+
+/**
+ * Executa ações do bot
+ */
 export class ActionExecutor {
   private bot: Bot;
   private movementManager: MovementManager;
@@ -102,7 +105,6 @@ export class ActionExecutor {
         console.log(`👀 Olhei para ${jogadorAleatorio.username}`);
       }
     } else {
-      // Olha para uma direção aleatória
       const yaw = Math.random() * Math.PI * 2;
       this.bot.look(yaw, 0);
       console.log('👀 Olhei ao redor');

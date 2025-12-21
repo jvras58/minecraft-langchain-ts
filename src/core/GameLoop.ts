@@ -67,12 +67,10 @@ export class GameLoop {
           executionTime: result.executionTime,
         });
 
-        // Log do resultado da ação
         if (!result.success) {
           console.log(`⚠️  Ação ${result.action} falhou: ${result.errorMessage}`);
         }
 
-        // Aguarda antes do próximo ciclo
         await sleep(3000);
       } catch (erro) {
         console.error('❌ Erro no loop:', erro);
