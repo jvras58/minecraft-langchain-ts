@@ -2,6 +2,16 @@ import { Bot } from 'mineflayer';
 import { BotAction } from '../types/types';
 import { MovementManager } from './MovementManager';
 
+/** Resultado da execução de uma ação */
+export interface ActionResult {
+  success: boolean;
+  action: string;
+  direction?: string;
+  content?: string;
+  errorMessage?: string;
+  executionTime: number; // em ms
+}
+
 export class ActionExecutor {
   private bot: Bot;
   private movementManager: MovementManager;
@@ -11,7 +21,9 @@ export class ActionExecutor {
     this.movementManager = new MovementManager(bot);
   }
 
-  async executarAcao(decisao: BotAction): Promise<void> {
+  async executarAcao(decisao: BotAction): Promise<ActionResult> {
+    const startTime = performance.now();
+
     try {
       switch (decisao.acao) {
         case 'FALAR':
@@ -50,8 +62,30 @@ export class ActionExecutor {
           console.log('💤 Não fiz nada...');
           break;
       }
+
+      const executionTime = performance.now() - startTime;
+
+      return {
+        success: true,
+        action: decisao.acao,
+        direction: decisao.direcao,
+        content: decisao.conteudo,
+        executionTime,
+      };
     } catch (erro) {
+      const executionTime = performance.now() - startTime;
+      const errorMessage = erro instanceof Error ? erro.message : String(erro);
+
       console.error('❌ Erro ao executar ação:', erro);
+
+      return {
+        success: false,
+        action: decisao.acao,
+        direction: decisao.direcao,
+        content: decisao.conteudo,
+        errorMessage,
+        executionTime,
+      };
     }
   }
 

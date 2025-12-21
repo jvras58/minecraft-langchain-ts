@@ -13,7 +13,19 @@ export interface BotAction {
 }
 
 export interface LLMProvider {
-  invoke(variables: Record<string, any>, userBotId: string): Promise<string>;
+  invoke(variables: Record<string, any>, userBotId: string, taskName?: string): Promise<string>;
+}
+
+/** Resultado detalhado do invoke, incluindo dados para métricas */
+export interface InvokeResult {
+  text: string;
+  metrics: {
+    provider: string;
+    model: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    responseTime: number;
+  };
 }
 
 export interface PromptTemplate {

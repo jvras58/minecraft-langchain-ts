@@ -7,6 +7,8 @@ export interface MetricsCallbackConfig {
     provider: string;
     model: string;
     userBotId: string;
+    /** Contexto da tarefa: "combat", "mining", "exploration", "chat", etc. */
+    taskName?: string;
 }
 
 interface TokenUsage {
@@ -65,6 +67,7 @@ export class MetricsCallbackHandler extends BaseCallbackHandler {
             outputTokens: tokenUsage.outputTokens,
             responseTime,
             userBotId: this.config.userBotId,
+            taskName: this.config.taskName,
         });
     }
 

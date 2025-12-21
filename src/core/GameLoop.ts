@@ -4,6 +4,7 @@ import { ActionExecutor } from '../bot/ActionExecutor';
 import { PerceptionManager } from '../bot/PerceptionManager';
 import { botActionSchema } from '../schemas/botAction';
 import { sleep } from '../utils/sleep';
+import { collectActionMetric } from '../utils/metrics';
 
 export class GameLoop {
   private botManager: BotManager;
@@ -52,8 +53,24 @@ export class GameLoop {
           continue;
         }
 
-        // 3. AÇÃO
-        await this.actionExecutor.executarAcao(decisao);
+        // 3. AÇÃO (agora retorna ActionResult completo)
+        const result = await this.actionExecutor.executarAcao(decisao);
+
+        // 4. SALVAR MÉTRICAS DE AÇÃO
+        await collectActionMetric({
+          userBotId: this.botManager.userBotId!,
+          action: result.action,
+          direction: result.direction,
+          content: result.content,
+          success: result.success,
+          errorMessage: result.errorMessage,
+          executionTime: result.executionTime,
+        });
+
+        // Log do resultado da ação
+        if (!result.success) {
+          console.log(`⚠️  Ação ${result.action} falhou: ${result.errorMessage}`);
+        }
 
         // Aguarda antes do próximo ciclo
         await sleep(3000);
@@ -72,7 +89,7 @@ export class GameLoop {
         contexto,
         ultimaAcao: this.ultimaAcao,
         contadorAcoes: JSON.stringify(this.contadorAcoes),
-      }, this.botManager.userBotId!);
+      }, this.botManager.userBotId!, this.ultimaAcao);
 
       const textoLimpo = resposta
         .replace(/```json/g, '')

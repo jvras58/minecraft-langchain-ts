@@ -11,9 +11,10 @@ datasource db {
 }
 
 model UserBot {
-  id      String   @id @default(cuid())
-  name    String?
-  metrics Metric[]
+  id            String         @id @default(cuid())
+  name          String?
+  metrics       Metric[]
+  actionMetrics ActionMetric[]
 }
 
 model Metric {
@@ -25,6 +26,38 @@ model Metric {
   inputTokens  Int?
   outputTokens Int?
   responseTime Float
-  environment  String // JSON string with hardware details
-  userBot      UserBot  @relation(fields: [userBotId], references: [id])
+
+  // Detalhes de Hardware para o TCC
+  gpuName String? // Ex: "RTX 3060"
+  cpuName String? // Ex: "i5-12400"
+  os      String? // Ex: "win32" ou "linux"
+
+  // Contexto da Tarefa (para correlacionar com ActionMetric)
+  taskName String? // Ex: "FALAR", "ANDAR", "EXPLORAR"
+
+  // Métricas de ambiente (JSON com CPU/RAM/GPU usage)
+  environment String?
+
+  userBot UserBot @relation(fields: [userBotId], references: [id])
+}
+
+// Métricas de execução de ações do bot
+model ActionMetric {
+  id        String   @id @default(cuid())
+  userBotId String
+  timestamp DateTime @default(now())
+
+  // Qual ação foi executada
+  action    String // Ex: "FALAR", "ANDAR", "PULAR", "EXPLORAR", "PARAR", "OLHAR", "NADA"
+  direction String? // Para ANDAR: "frente", "tras", "esquerda", "direita", "aleatorio"
+  content   String? // Para FALAR: o que foi dito
+
+  // Resultado da execução
+  success      Boolean @default(true)
+  errorMessage String? // Se falhou, qual foi o erro
+
+  // Duração da execução da ação (em ms)
+  executionTime Float?
+
+  userBot UserBot @relation(fields: [userBotId], references: [id])
 }
