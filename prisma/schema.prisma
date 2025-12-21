@@ -10,7 +10,6 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// TODO: Add UserBot para podermos indentificar qual bot gerou a métrica
 model UserBot {
   id      String   @id @default(cuid())
   name    String?
