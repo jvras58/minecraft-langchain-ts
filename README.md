@@ -61,6 +61,27 @@ MINECRAFT_PORT=25565
 BOT_USERNAME=MeuBot
 BOT_AUTH=offline
 ```
+## Setup Inicial (Obrigatório)
+
+Antes de rodar o projeto pela primeira vez, execute os comandos abaixo para configurar o Prisma:
+
+```bash
+# 1. Gerar o Prisma Client (necessário após clonar o repo ou alterar o schema)
+npx prisma generate
+
+# 2. Criar/atualizar o banco de dados SQLite(Por enquanto) com base no schema
+npx prisma db push
+```
+
+> [!IMPORTANT]
+> Esses comandos são **obrigatórios** para o projeto funcionar. Sem eles, o Prisma Client não será gerado e o banco de dados não existirá.
+
+**Quando executar novamente:**
+- `prisma generate`: Sempre que o `schema.prisma` for alterado
+- `prisma db push`: Sempre que houver mudanças no modelo de dados
+
+**Verificar dados:**
+- Use Prisma Studio: `npx prisma studio`
 
 ## 🏗️ Arquitetura
 
