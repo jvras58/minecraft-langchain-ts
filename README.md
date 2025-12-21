@@ -301,6 +301,8 @@ MIT
 
 - jvras58
 
+## 📜 Referências
+
 - [Mineflayer](https://github.com/PrismarineJS/mineflayer)
 - [Modelos Disponiveis](https://docs.langchain.com/oss/javascript/integrations/providers/overview)
 - [LangChain](https://www.langchain.com/)
