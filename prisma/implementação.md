@@ -47,7 +47,7 @@ O sistema de métricas é responsável por coletar, armazenar e analisar dados d
 ### 4. Armazenamento
 - **Banco SQLite**: Via Prisma ORM
 - **Instância Singleton**: Uso compartilhado do Prisma Client em `src/utils/db.ts`
-- **Migração**: Tabela criada com `prisma migrate dev`
+- **Push**: Use `npx prisma db push` para subir o schema para o banco de dados
 
 ## Como Usar
 
