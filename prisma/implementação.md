@@ -21,13 +21,20 @@ O sistema de métricas é responsável por coletar, armazenar e analisar dados d
   - Localização: `src/utils/MetricsCallbackHandler.ts`
   - Estende `BaseCallbackHandler` do `@langchain/core`
   - Captura métricas reais via `handleLLMStart()` e `handleLLMEnd()`
+
+- **Extração Híbrida de Tokens** (prioridade):
+  1. `response_metadata` das gerações (mais confiável para ChatModels)
+  2. `llmOutput.tokenUsage` (fallback para alguns providers)
+  3. Formato Ollama específico (`prompt_eval_count`, `eval_count`)
+  4. Estimativa (1 token ≈ 4 caracteres) - último recurso
+
 - **Métricas Capturadas**:
   - `responseTime`: Tempo real medido com `performance.now()` (em segundos)
-  - `inputTokens`: Obtido do `llmOutput.tokenUsage` quando disponível
-  - `outputTokens`: Obtido do `llmOutput.tokenUsage` quando disponível
-  - Fallback para estimativa (1 token ≈ 4 caracteres) quando provider não retorna tokens
+  - `inputTokens`: Extraído de múltiplas fontes via `extractTokenUsage()`
+  - `outputTokens`: Extraído de múltiplas fontes via `extractTokenUsage()`
+
+- **Providers Suportados**: Groq, Ollama, OpenAI e outros compatíveis com LangChain
 - **Função `collectAndStoreMetric`**: Registra métricas no Prisma após cada chamada
-- **Integração nos Providers**: `GroqProvider` e `OllamaProvider` usam o callback automaticamente
 
 ### 3. Dados de Hardware
 - **Biblioteca systeminformation**: Coleta informações do sistema
