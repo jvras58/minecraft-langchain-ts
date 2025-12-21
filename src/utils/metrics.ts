@@ -8,7 +8,6 @@ export interface MetricData {
   outputTokens?: number;
   responseTime: number;
   userBotId: string;
-  /** Contexto da tarefa: "FALAR", "ANDAR", "EXPLORAR", etc. */
   taskName?: string;
 }
 
@@ -113,18 +112,14 @@ async function getDynamicMetrics(): Promise<DynamicMetrics> {
 }
 
 export async function collectAndStoreMetric(data: MetricData) {
-  // Captura métricas dinâmicas (tempo real) e estáticas (cacheadas)
   const [dynamicMetrics, staticInfo] = await Promise.all([
     getDynamicMetrics(),
     getStaticHardwareInfo(),
   ]);
 
-  // Extrai informações de hardware para os campos dedicados
   const gpuName = staticInfo.gpu[0]?.model ?? null;
   const cpuName = `${staticInfo.cpu.manufacturer} ${staticInfo.cpu.brand}`;
-  const os = process.platform; // 'win32', 'linux', 'darwin', etc.
-
-  // Monta environment com métricas dinâmicas (uso de CPU/RAM/GPU em tempo real)
+  const os = process.platform;
   const environment = {
     cpu: staticInfo.cpu,
     memory: staticInfo.memory,
