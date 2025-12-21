@@ -86,3 +86,26 @@ const result = await this.llm.invoke(messages, {
 - **Banco de Dados Online**: Migrar para um banco cloud (ex: Prisma Postgres ou Neon) para reduzir carga local e permitir acesso remoto às métricas
 - ~~**Integração Nativa com LangChain**~~: ✅ Implementado via `MetricsCallbackHandler`
 
+---
+
+## Decisões de Design
+
+### Snapshot por Interação (Abordagem Atual)
+
+Cada chamada ao LLM cria um registro completo incluindo dados de hardware:
+
+```
+Metric: { tokens, latência, environment: {CPU, RAM, GPU} }
+```
+
+**Por que essa abordagem?**
+- ✅ **Precisão histórica**: Captura o estado exato do hardware no momento da chamada
+- ✅ **Simplicidade de queries**: Cada registro é autocontido, sem necessidade de JOINs
+- ✅ **Análise de benchmark**: Facilita correlacionar performance com recursos disponíveis
+- ⚠️ **Trade-off**: Dados de environment são repetidos (redundância aceita)
+
+**Alternativa considerada (Session-based)**:
+Criar tabela `Session` com environment e referenciar em `Metric`. Não implementado porque:
+- Memória livre varia constantemente durante execução
+- Adiciona complexidade sem ganho significativo para SQLite local
+
