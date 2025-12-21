@@ -16,10 +16,18 @@ O sistema de métricas é responsável por coletar, armazenar e analisar dados d
   - `responseTime`: Tempo de resposta em segundos
   - `environment`: JSON com dados de hardware (CPU, memória, GPU)
 
-### 2. Coleta de Dados
-- **Função `collectAndStoreMetric`**: Registra métricas automaticamente após cada chamada de IA
-- **Estimativa de Tokens**: Cálculo simples (1 token ≈ 4 caracteres) para entrada e saída
-- **Integração Automática**: Chamada nos providers GroqProvider e OllamaProvider
+### 2. Coleta de Dados com Callbacks do LangChain
+- **Classe `MetricsCallbackHandler`**: Callback handler customizado que intercepta eventos do LLM
+  - Localização: `src/utils/MetricsCallbackHandler.ts`
+  - Estende `BaseCallbackHandler` do `@langchain/core`
+  - Captura métricas reais via `handleLLMStart()` e `handleLLMEnd()`
+- **Métricas Capturadas**:
+  - `responseTime`: Tempo real medido com `performance.now()` (em segundos)
+  - `inputTokens`: Obtido do `llmOutput.tokenUsage` quando disponível
+  - `outputTokens`: Obtido do `llmOutput.tokenUsage` quando disponível
+  - Fallback para estimativa (1 token ≈ 4 caracteres) quando provider não retorna tokens
+- **Função `collectAndStoreMetric`**: Registra métricas no Prisma após cada chamada
+- **Integração nos Providers**: `GroqProvider` e `OllamaProvider` usam o callback automaticamente
 
 ### 3. Dados de Hardware
 - **Biblioteca systeminformation**: Coleta informações do sistema
@@ -36,16 +44,20 @@ O sistema de métricas é responsável por coletar, armazenar e analisar dados d
 
 ## Como Usar
 
-### Importar e Chamar
+### Uso nos Providers
+O callback é usado automaticamente nos providers:
 ```typescript
-import { collectAndStoreMetric } from './utils/metrics';
+import { MetricsCallbackHandler } from '../../utils/MetricsCallbackHandler';
 
-await collectAndStoreMetric({
+// No método invoke do provider
+const metricsCallback = new MetricsCallbackHandler({
   provider: 'Groq',
-  model: 'llama-3.3-70b-versatile',
-  inputTokens: 150,
-  outputTokens: 50,
-  responseTime: 2.5,
+  model: this.modelName,
+  userBotId,
+});
+
+const result = await this.llm.invoke(messages, {
+  callbacks: [metricsCallback],
 });
 ```
 
@@ -71,6 +83,6 @@ await collectAndStoreMetric({
 - **Análises Estatísticas**: Médias, medianas, distribuições
 - **Comparação de Modelos**: Gráficos de performance entre provedores
 - **Exportação**: Relatórios em CSV/JSON
-- **Integração Nativa com LangChain**: Usar callbacks e middlewares do LangChain para obter métricas precisas de tokens, custos e uso, em vez de estimativas manuais (similar ao que outros frameworks como Agno fazem)
 - **Banco de Dados Online**: Migrar para um banco cloud (ex: Prisma Postgres ou Neon) para reduzir carga local e permitir acesso remoto às métricas
+- ~~**Integração Nativa com LangChain**~~: ✅ Implementado via `MetricsCallbackHandler`
 

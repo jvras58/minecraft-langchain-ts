@@ -1,18 +1,18 @@
 import { ChatGroq } from '@langchain/groq';
 import { BaseLLMProvider } from '../LLMProvider';
 import { PromptTemplate } from '../../types/types';
-import { collectAndStoreMetric } from '../../utils/metrics';
-import perf from 'performance-now';
+import { MetricsCallbackHandler } from '../../utils/MetricsCallbackHandler';
 
 export class GroqProvider extends BaseLLMProvider {
   private llm: ChatGroq;
   private promptTemplate: PromptTemplate;
+  private modelName = 'llama-3.3-70b-versatile';
 
   constructor(apiKey: string, promptTemplate: PromptTemplate) {
     super();
     this.llm = new ChatGroq({
       apiKey,
-      model: 'llama-3.3-70b-versatile',
+      model: this.modelName,
       temperature: 0.8,
     });
     this.promptTemplate = promptTemplate;
@@ -29,23 +29,15 @@ export class GroqProvider extends BaseLLMProvider {
       { role: 'user', content: humanMessage }
     ];
 
-    const start = perf();
-    const result = await this.llm.invoke(messages);
-    const end = perf();
-    const responseTime = (end - start) / 1000; // em segundos
-
-    // Estimar tokens (simples estimativa: 1 token ~ 4 caracteres)
-    const inputText = this.promptTemplate.system + humanMessage;
-    const inputTokens = Math.ceil(inputText.length / 4);
-    const outputTokens = Math.ceil((result.content as string).length / 4);
-
-    await collectAndStoreMetric({
+    // Callback para métricas automáticas
+    const metricsCallback = new MetricsCallbackHandler({
       provider: 'Groq',
-      model: 'llama-3.3-70b-versatile',
-      inputTokens,
-      outputTokens,
-      responseTime,
+      model: this.modelName,
       userBotId,
+    });
+
+    const result = await this.llm.invoke(messages, {
+      callbacks: [metricsCallback],
     });
 
     return result.content as string;
