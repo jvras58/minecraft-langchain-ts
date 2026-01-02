@@ -46,6 +46,7 @@ interface DynamicMetrics {
 export async function getOrCreateUserBot(name: string): Promise<string> {
   let userBot = await prisma.userBot.findFirst({
     where: { name },
+    orderBy: { id: 'asc' },
   });
 
   if (!userBot) {
@@ -115,7 +116,14 @@ async function getDynamicMetrics(): Promise<DynamicMetrics> {
   };
 }
 
-export async function collectAndStoreMetric(data: MetricData) {
+/**
+ * Coleta métricas de hardware e armazena junto com dados de inferência do LLM.
+ * 
+ * Esta função combina métricas dinâmicas do sistema (uso de CPU/GPU, RAM) 
+ * com informações estáticas de hardware e os dados de inferência fornecidos,
+ * persistindo tudo no banco de dados.
+ */
+export async function collectAndStoreMetric(data: MetricData): Promise<void> {
   const [dynamicMetrics, staticInfo] = await Promise.all([
     getDynamicMetrics(),
     getStaticHardwareInfo(),
@@ -149,8 +157,13 @@ export function resetStaticCache(): void {
   cachedStaticInfo = null;
 }
 
-// ==================== ACTION METRICS ====================
-
+/**
+ * Interface para dados de métrica de ação.
+ * 
+ * Esta interface define os campos necessários para coletar métricas de ação,
+ * incluindo informações sobre a ação executada, sucesso, tempo de execução,
+ * e conteúdo ou direção relevantes.
+ */
 export interface ActionMetricData {
   userBotId: string;
   /** Ação executada: "FALAR", "ANDAR", "PULAR", etc. */
