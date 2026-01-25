@@ -71,6 +71,12 @@ export class GameLoop {
           });
         } catch (metricError) {
           console.error('Erro ao coletar métricas:', metricError);
+          if (result.success) {
+            console.warn(
+              `Métrica de ação não registrada para ação bem-sucedida. ` +
+              `userBotId=${userBotId}, ação=${result.action}, direção=${result.direction}`
+            );
+          }
         }
 
         if (!result.success) {
