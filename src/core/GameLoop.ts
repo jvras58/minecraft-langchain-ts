@@ -94,7 +94,7 @@ export class GameLoop {
         contexto,
         ultimaAcao: this.ultimaAcao,
         contadorAcoes: JSON.stringify(this.contadorAcoes),
-      }, this.botManager.userBotId!, this.ultimaAcao);
+      }, this.botManager.userBotId!, 'action_decision');
 
       const textoLimpo = resposta
         .replace(/```json/g, '')
