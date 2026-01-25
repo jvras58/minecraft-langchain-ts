@@ -30,7 +30,6 @@ export class MovementManager {
         break;
     }
 
-    // Para automaticamente após 2-4 segundos
     const tempo = 2000 + Math.random() * 2000;
     setTimeout(() => this.pararMovimento(), tempo);
   }
@@ -38,17 +37,14 @@ export class MovementManager {
   explorarAleatorio(): void {
     this.pararMovimento();
 
-    // Escolhe direção aleatória
     const direcoes: ControlState[] = ['forward', 'back', 'left', 'right'];
     const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
 
     this.bot.setControlState(dir, true);
 
-    // Olha para direção aleatória
     const yaw = Math.random() * Math.PI * 2;
     this.bot.look(yaw, 0);
 
-    // Para após 3-6 segundos
     const tempo = 3000 + Math.random() * 3000;
     setTimeout(() => this.pararMovimento(), tempo);
   }

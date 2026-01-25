@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-// npx prisma generate (caso o prismaclient não esteja funcionando)
+
 declare global {
   var prisma: PrismaClient | undefined;
 }

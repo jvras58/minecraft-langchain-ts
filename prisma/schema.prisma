@@ -11,9 +11,10 @@ datasource db {
 }
 
 model UserBot {
-  id      String   @id @default(cuid())
-  name    String?
-  metrics Metric[]
+  id            String         @id @default(cuid())
+  name          String?
+  metrics       Metric[]
+  actionMetrics ActionMetric[]
 }
 
 model Metric {
@@ -25,6 +26,36 @@ model Metric {
   inputTokens  Int?
   outputTokens Int?
   responseTime Float
-  environment  String // JSON string with hardware details
-  userBot      UserBot  @relation(fields: [userBotId], references: [id])
+
+  gpuName String?
+  cpuName String?
+  os      String?
+
+  taskName String?
+
+  environment String
+
+  userBot UserBot @relation(fields: [userBotId], references: [id])
+
+  @@index([userBotId, timestamp])
+  @@index([provider])
+  @@index([taskName])
+}
+
+model ActionMetric {
+  id        String   @id @default(cuid())
+  userBotId String
+  timestamp DateTime @default(now())
+  action    String
+  direction String?
+  content   String?
+
+  success       Boolean
+  errorMessage  String?
+  executionTime Float
+
+  userBot UserBot @relation(fields: [userBotId], references: [id])
+
+  @@index([userBotId, timestamp])
+  @@index([userBotId, action])
 }

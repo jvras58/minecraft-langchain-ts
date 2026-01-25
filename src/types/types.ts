@@ -13,8 +13,9 @@ export interface BotAction {
 }
 
 export interface LLMProvider {
-  invoke(variables: Record<string, any>, userBotId: string): Promise<string>;
+  invoke(variables: Record<string, any>, userBotId: string, taskName?: string): Promise<string>;
 }
+
 
 export interface PromptTemplate {
   system: string;

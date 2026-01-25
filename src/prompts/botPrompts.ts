@@ -15,7 +15,7 @@ export const botPromptTemplate: PromptTemplate = {
     {"acao": "OLHAR"}
 
     Ações disponíveis:
-    - ANDAR: andar em uma direção (frente/tras/esquerda/direita/aleatorio)
+    - ANDAR: andar em uma direção (frente/tras/esquerda/direita/aleatorio) - se não especificar, anda para frente
     - EXPLORAR: andar aleatoriamente explorando o mundo
     - PULAR: pular (útil para subir ou se divertir)
     - FALAR: enviar mensagem no chat (use raramente, seja breve)

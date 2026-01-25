@@ -18,7 +18,11 @@ export class OllamaProvider extends BaseLLMProvider {
     this.promptTemplate = promptTemplate;
   }
 
-  async invoke(variables: Record<string, any>, userBotId: string): Promise<string> {
+  async invoke(
+    variables: Record<string, any>,
+    userBotId: string,
+    taskName?: string
+  ): Promise<string> {
     const humanMessage = this.promptTemplate.human
       .replace('{contexto}', variables.contexto || '')
       .replace('{ultimaAcao}', variables.ultimaAcao || '')
@@ -34,6 +38,7 @@ export class OllamaProvider extends BaseLLMProvider {
       provider: 'Ollama',
       model: this.modelName,
       userBotId,
+      taskName,
     });
 
     const result = await this.llm.invoke(messages, {

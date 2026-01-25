@@ -4,6 +4,7 @@ import { ActionExecutor } from '../bot/ActionExecutor';
 import { PerceptionManager } from '../bot/PerceptionManager';
 import { botActionSchema } from '../schemas/botAction';
 import { sleep } from '../utils/sleep';
+import { collectActionMetric } from '../utils/metrics';
 
 export class GameLoop {
   private botManager: BotManager;
@@ -36,26 +37,59 @@ export class GameLoop {
 
   private async runLoop(): Promise<void> {
     while (this.isRunning) {
-      if (!this.botManager.isConnected() || !this.actionExecutor || !this.perceptionManager) {
+      if (!this.botManager.isConnected() || !this.actionExecutor || !this.perceptionManager || !this.botManager.userBotId) {
         await sleep(2000);
         continue;
       }
+
+      const userBotId = this.botManager.userBotId;
 
       try {
         // 1. PERCEPÇÃO
         const contexto = this.perceptionManager.getGameContext();
 
         // 2. PENSAMENTO
-        const decisao = await this.pensar(contexto);
+        const decisao = await this.pensar(contexto, userBotId);
 
         if (!this.botManager.isConnected() || !decisao) {
           continue;
         }
 
-        // 3. AÇÃO
-        await this.actionExecutor.executarAcao(decisao);
+        // 3. AÇÃO (agora retorna ActionResult completo)
+        const result = await this.actionExecutor.executarAcao(decisao);
 
-        // Aguarda antes do próximo ciclo
+        // 4. SALVAR MÉTRICAS DE AÇÃO
+        try {
+          await collectActionMetric({
+            userBotId,
+            action: result.action,
+            direction: result.direction,
+            content: result.content,
+            success: result.success,
+            errorMessage: result.errorMessage,
+            executionTime: result.executionTime,
+          });
+        } catch (metricError) {
+          console.error('Erro ao coletar métricas:', metricError);
+          if (result.success) {
+            console.warn(
+              `Métrica de ação não registrada para ação bem-sucedida. ` +
+              `userBotId=${userBotId}, ação=${result.action}, direção=${result.direction}`
+            );
+          }
+        }
+
+        if (!result.success) {
+          console.log(`⚠️  Ação ${result.action} falhou: ${result.errorMessage}`);
+        }
+
+        if (result.success) {
+          if (result.action in this.contadorAcoes) {
+            this.contadorAcoes[result.action as keyof typeof this.contadorAcoes]++;
+          }
+          this.ultimaAcao = result.action;
+        }
+
         await sleep(3000);
       } catch (erro) {
         console.error('❌ Erro no loop:', erro);
@@ -64,7 +98,7 @@ export class GameLoop {
     }
   }
 
-  private async pensar(contexto: string): Promise<BotAction | null> {
+  private async pensar(contexto: string, userBotId: string): Promise<BotAction | null> {
     if (!this.botManager.isConnected()) return null;
 
     try {
@@ -72,7 +106,7 @@ export class GameLoop {
         contexto,
         ultimaAcao: this.ultimaAcao,
         contadorAcoes: JSON.stringify(this.contadorAcoes),
-      }, this.botManager.userBotId!);
+      }, userBotId, 'action_decision');
 
       const textoLimpo = resposta
         .replace(/```json/g, '')
@@ -82,11 +116,6 @@ export class GameLoop {
       const parsed = JSON.parse(textoLimpo);
       const decisao = botActionSchema.parse(parsed);
 
-      if (decisao.acao in this.contadorAcoes) {
-        this.contadorAcoes[decisao.acao as keyof typeof this.contadorAcoes]++;
-      }
-
-      this.ultimaAcao = decisao.acao;
       return decisao;
     } catch (erro) {
       console.error('❌ Erro no raciocínio:', erro);
