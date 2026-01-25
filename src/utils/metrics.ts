@@ -13,6 +13,10 @@ export interface MetricData {
 
 let cachedStaticInfo: StaticHardwareInfo | null = null;
 
+let lastDynamicMetrics: DynamicMetrics | null = null;
+let lastDynamicCollectionTime: number = 0;
+const DYNAMIC_METRICS_INTERVAL = 5000;
+
 interface StaticHardwareInfo {
   cpu: {
     manufacturer: string;
@@ -124,10 +128,19 @@ async function getDynamicMetrics(): Promise<DynamicMetrics> {
  * persistindo tudo no banco de dados.
  */
 export async function collectAndStoreMetric(data: MetricData): Promise<void> {
-  const [dynamicMetrics, staticInfo] = await Promise.all([
-    getDynamicMetrics(),
-    getStaticHardwareInfo(),
-  ]);
+  const staticInfo = await getStaticHardwareInfo();
+
+  let dynamicMetrics: DynamicMetrics;
+  if (lastDynamicMetrics === null || Date.now() - lastDynamicCollectionTime > DYNAMIC_METRICS_INTERVAL) {
+    const start = Date.now();
+    dynamicMetrics = await getDynamicMetrics();
+    const duration = Date.now() - start;
+    console.log(`getDynamicMetrics took ${duration}ms`);
+    lastDynamicMetrics = dynamicMetrics;
+    lastDynamicCollectionTime = Date.now();
+  } else {
+    dynamicMetrics = lastDynamicMetrics;
+  }
 
   const gpuName = staticInfo.gpu[0]?.model ?? null;
   const cpuName = `${staticInfo.cpu.manufacturer.trim()} ${staticInfo.cpu.brand.trim()}`;
