@@ -130,7 +130,7 @@ export async function collectAndStoreMetric(data: MetricData): Promise<void> {
   ]);
 
   const gpuName = staticInfo.gpu[0]?.model ?? null;
-  const cpuName = `${staticInfo.cpu.manufacturer} ${staticInfo.cpu.brand}`;
+  const cpuName = `${staticInfo.cpu.manufacturer.trim()} ${staticInfo.cpu.brand.trim()}`;
   const os = process.platform;
   const environment = {
     cpu: staticInfo.cpu,
