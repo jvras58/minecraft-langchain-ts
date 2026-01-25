@@ -143,7 +143,10 @@ export async function collectAndStoreMetric(data: MetricData): Promise<void> {
   }
 
   const gpuName = staticInfo.gpu[0]?.model ?? null;
-  const cpuName = `${staticInfo.cpu.manufacturer.trim()} ${staticInfo.cpu.brand.trim()}`;
+  const cpuName = [staticInfo.cpu.manufacturer, staticInfo.cpu.brand]
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join(' ');
   const os = process.platform;
   const environment = {
     cpu: staticInfo.cpu,
@@ -201,6 +204,13 @@ export interface ActionMetricData {
  * Separado das métricas de LLM para rastrear o que o bot fez e se foi bem sucedido.
  */
 export async function collectActionMetric(data: ActionMetricData): Promise<void> {
+  const userBot = await prisma.userBot.findUnique({
+    where: { id: data.userBotId },
+  });
+  if (!userBot) {
+    throw new Error(`UserBot com ID ${data.userBotId} não existe.`);
+  }
+
   await prisma.actionMetric.create({
     data: {
       userBotId: data.userBotId,
