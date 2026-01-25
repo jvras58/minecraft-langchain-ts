@@ -71,6 +71,13 @@ export class GameLoop {
           console.log(`⚠️  Ação ${result.action} falhou: ${result.errorMessage}`);
         }
 
+        if (result.success) {
+          if (result.action in this.contadorAcoes) {
+            this.contadorAcoes[result.action as keyof typeof this.contadorAcoes]++;
+          }
+          this.ultimaAcao = result.action;
+        }
+
         await sleep(3000);
       } catch (erro) {
         console.error('❌ Erro no loop:', erro);
@@ -97,11 +104,6 @@ export class GameLoop {
       const parsed = JSON.parse(textoLimpo);
       const decisao = botActionSchema.parse(parsed);
 
-      if (decisao.acao in this.contadorAcoes) {
-        this.contadorAcoes[decisao.acao as keyof typeof this.contadorAcoes]++;
-      }
-
-      this.ultimaAcao = decisao.acao;
       return decisao;
     } catch (erro) {
       console.error('❌ Erro no raciocínio:', erro);
