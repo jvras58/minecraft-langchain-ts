@@ -31,7 +31,7 @@ model Metric {
   cpuName String?
   os      String?
 
-  taskName String?
+  taskName String
 
   environment String?
 
