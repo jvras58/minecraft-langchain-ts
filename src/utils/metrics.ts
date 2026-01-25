@@ -176,7 +176,10 @@ export interface ActionMetricData {
   success: boolean;
   /** Mensagem de erro se falhou */
   errorMessage?: string;
-  /** Tempo de execução da ação em ms */
+  /**
+   * Tempo de execução da ação em milissegundos (ms).
+   * Deve corresponder à unidade armazenada em actionMetric.executionTime no Prisma.
+   */
   executionTime?: number;
 }
 
