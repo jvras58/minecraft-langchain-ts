@@ -33,7 +33,7 @@ model Metric {
 
   taskName String
 
-  environment String?
+  environment String
 
   userBot UserBot @relation(fields: [userBotId], references: [id])
 }
