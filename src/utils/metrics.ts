@@ -135,7 +135,6 @@ export async function collectAndStoreMetric(data: MetricData): Promise<void> {
     const start = Date.now();
     dynamicMetrics = await getDynamicMetrics();
     const duration = Date.now() - start;
-    console.log(`getDynamicMetrics took ${duration}ms`);
     lastDynamicMetrics = dynamicMetrics;
     lastDynamicCollectionTime = Date.now();
   } else {
