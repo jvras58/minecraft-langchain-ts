@@ -33,6 +33,8 @@ export class ActionExecutor {
           if (decisao.conteudo) {
             this.bot.chat(decisao.conteudo);
             console.log(`🗣️  Falei: ${decisao.conteudo}`);
+          } else {
+            throw new Error('Conteúdo é obrigatório para a ação FALAR');
           }
           break;
 
