@@ -180,7 +180,7 @@ export interface ActionMetricData {
    * Tempo de execução da ação em milissegundos (ms).
    * Deve corresponder à unidade armazenada em actionMetric.executionTime no Prisma.
    */
-  executionTime?: number;
+  executionTime: number;
 }
 
 /**
