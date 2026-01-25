@@ -50,7 +50,6 @@ interface DynamicMetrics {
 export async function getOrCreateUserBot(name: string): Promise<string> {
   let userBot = await prisma.userBot.findFirst({
     where: { name },
-    orderBy: { id: 'asc' },
   });
 
   if (!userBot) {
