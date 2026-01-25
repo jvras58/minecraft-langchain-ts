@@ -37,17 +37,19 @@ export class GameLoop {
 
   private async runLoop(): Promise<void> {
     while (this.isRunning) {
-      if (!this.botManager.isConnected() || !this.actionExecutor || !this.perceptionManager) {
+      if (!this.botManager.isConnected() || !this.actionExecutor || !this.perceptionManager || !this.botManager.userBotId) {
         await sleep(2000);
         continue;
       }
+
+      const userBotId = this.botManager.userBotId;
 
       try {
         // 1. PERCEPÇÃO
         const contexto = this.perceptionManager.getGameContext();
 
         // 2. PENSAMENTO
-        const decisao = await this.pensar(contexto);
+        const decisao = await this.pensar(contexto, userBotId);
 
         if (!this.botManager.isConnected() || !decisao) {
           continue;
@@ -59,7 +61,7 @@ export class GameLoop {
         // 4. SALVAR MÉTRICAS DE AÇÃO
         try {
           await collectActionMetric({
-            userBotId: this.botManager.userBotId!,
+            userBotId,
             action: result.action,
             direction: result.direction,
             content: result.content,
@@ -90,7 +92,7 @@ export class GameLoop {
     }
   }
 
-  private async pensar(contexto: string): Promise<BotAction | null> {
+  private async pensar(contexto: string, userBotId: string): Promise<BotAction | null> {
     if (!this.botManager.isConnected()) return null;
 
     try {
@@ -98,7 +100,7 @@ export class GameLoop {
         contexto,
         ultimaAcao: this.ultimaAcao,
         contadorAcoes: JSON.stringify(this.contadorAcoes),
-      }, this.botManager.userBotId!, 'action_decision');
+      }, userBotId, 'action_decision');
 
       const textoLimpo = resposta
         .replace(/```json/g, '')
