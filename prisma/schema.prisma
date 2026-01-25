@@ -57,5 +57,5 @@ model ActionMetric {
   userBot UserBot @relation(fields: [userBotId], references: [id])
 
   @@index([userBotId, timestamp])
-  @@index([action])
+  @@index([userBotId, action])
 }
