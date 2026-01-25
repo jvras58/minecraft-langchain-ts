@@ -39,11 +39,9 @@ export class ActionExecutor {
           break;
 
         case 'ANDAR':
-          if (!decisao.direcao) {
-            throw new Error('Direção é obrigatória para a ação ANDAR');
-          }
-          this.movementManager.andarNaDirecao(decisao.direcao);
-          console.log(`🚶 Andando para ${decisao.direcao}`);
+          const direcao = decisao.direcao || 'frente';
+          this.movementManager.andarNaDirecao(direcao);
+          console.log(`🚶 Andando para ${direcao}`);
           break;
 
         case 'EXPLORAR':
