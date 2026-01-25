@@ -16,16 +16,6 @@ export interface LLMProvider {
   invoke(variables: Record<string, any>, userBotId: string, taskName?: string): Promise<string>;
 }
 
-export interface InvokeResult {
-  text: string;
-  metrics: {
-    provider: string;
-    model: string;
-    inputTokens?: number;
-    outputTokens?: number;
-    responseTime: number;
-  };
-}
 
 export interface PromptTemplate {
   system: string;
