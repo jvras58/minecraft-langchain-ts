@@ -44,11 +44,6 @@ export class GameLoop {
 
       const userBotId = this.botManager.userBotId;
 
-      if (!userBotId) {
-        await sleep(2000);
-        continue;
-      }
-
       try {
         // 1. PERCEPÇÃO
         const contexto = this.perceptionManager.getGameContext();
