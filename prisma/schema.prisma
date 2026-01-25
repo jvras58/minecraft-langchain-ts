@@ -36,6 +36,10 @@ model Metric {
   environment String
 
   userBot UserBot @relation(fields: [userBotId], references: [id])
+
+  @@index([userBotId, timestamp])
+  @@index([provider])
+  @@index([taskName])
 }
 
 model ActionMetric {
@@ -46,7 +50,7 @@ model ActionMetric {
   direction String?
   content   String?
 
-  success       Boolean @default(true)
+  success       Boolean
   errorMessage  String?
   executionTime Float?
 
