@@ -200,13 +200,6 @@ export interface ActionMetricData {
  * Separado das métricas de LLM para rastrear o que o bot fez e se foi bem sucedido.
  */
 export async function collectActionMetric(data: ActionMetricData): Promise<void> {
-  const userBot = await prisma.userBot.findUnique({
-    where: { id: data.userBotId },
-  });
-  if (!userBot) {
-    throw new Error(`UserBot com ID ${data.userBotId} não existe.`);
-  }
-
   await prisma.actionMetric.create({
     data: {
       userBotId: data.userBotId,
