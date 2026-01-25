@@ -1,135 +1,68 @@
 import { Bot } from 'mineflayer';
 import { BotAction } from '../types/types';
-import { MovementManager } from './MovementManager';
+import { goals, Movements } from 'mineflayer-pathfinder';
 
-export interface ActionResult {
-  success: boolean;
-  action: string;
-  direction?: string;
-  content?: string;
-  errorMessage?: string;
-  executionTime: number;
-}
-
-
-/**
- * Executa ações do bot
- */
 export class ActionExecutor {
   private bot: Bot;
-  private movementManager: MovementManager;
 
   constructor(bot: Bot) {
     this.bot = bot;
-    this.movementManager = new MovementManager(bot);
   }
 
-  async executarAcao(decisao: BotAction): Promise<ActionResult> {
+  async executarAcao(decisao: BotAction): Promise<any> {
     const startTime = performance.now();
+    const movements = new Movements(this.bot);
 
     try {
       switch (decisao.acao) {
-        case 'FALAR':
-          if (decisao.conteudo) {
-            this.bot.chat(decisao.conteudo);
-            console.log(`🗣️  Falei: ${decisao.conteudo}`);
-          } else {
-            throw new Error('Conteúdo é obrigatório para a ação FALAR');
+        case 'COLETAR':
+          const bloco = this.bot.findBlock({
+            matching: (b) => b.name.includes(decisao.alvo || ''),
+            maxDistance: 32
+          });
+          if (bloco) {
+            await this.bot.collectBlock.collect(bloco);
+            return { success: true, action: 'COLETAR', executionTime: performance.now() - startTime };
           }
           break;
 
-        case 'ANDAR':
-          const direcao = decisao.direcao || 'frente';
-          this.movementManager.andarNaDirecao(direcao);
-          console.log(`🚶 Andando para ${direcao}`);
+        case 'IR_ATE':
+          const alvo = this.bot.nearestEntity(e => e.username === decisao.alvo || e.name === decisao.alvo);
+          if (alvo) {
+            this.bot.pathfinder.setMovements(movements);
+            await this.bot.pathfinder.goto(new goals.GoalFollow(alvo, 2));
+            return { success: true, action: 'IR_ATE', executionTime: performance.now() - startTime };
+          }
           break;
 
         case 'EXPLORAR':
-          this.movementManager.explorarAleatorio();
-          console.log('🗺️  Explorando o mundo...');
-          break;
+          const x = this.bot.entity.position.x + (Math.random() * 40 - 20);
+          const z = this.bot.entity.position.z + (Math.random() * 40 - 20);
+          this.bot.pathfinder.setMovements(movements);
+          await this.bot.pathfinder.goto(new goals.GoalNear(x, this.bot.entity.position.y, z, 1));
+          return { success: true, action: 'EXPLORAR', executionTime: performance.now() - startTime };
 
         case 'PULAR':
-          await this.movementManager.pular();
-          console.log('🦘 Pulei!');
-          break;
-
-        case 'PARAR':
-          this.movementManager.pararMovimento();
-          console.log('🛑 Parei de andar');
-          break;
+          this.bot.setControlState('jump', true);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          this.bot.setControlState('jump', false);
+          return { success: true, action: 'PULAR', executionTime: performance.now() - startTime };
 
         case 'OLHAR':
-          this.olharAoRedor();
-          break;
-        
-        // TODO: Separar para movementManager?
-        case 'MINERAR':
-          if (decisao.alvo) {
-            const bloco = this.bot.findBlock({
-              matching: (block) => block.name.includes(decisao.alvo!),
-              maxDistance: 4
-            });
+          const entity = this.bot.nearestEntity();
+          if (entity) await this.bot.lookAt(entity.position.offset(0, 1.6, 0));
+          return { success: true, action: 'OLHAR', executionTime: performance.now() - startTime };
 
-            if (bloco) {
-              await this.bot.dig(bloco);
-              console.log(`⛏️ Minerando: ${bloco.name}`);
-            } else {
-              throw new Error(`Bloco ${decisao.alvo} não encontrado por perto.`);
-            }
-          }
-          break;
+        case 'FALAR':
+          if (decisao.conteudo) this.bot.chat(decisao.conteudo);
+          return { success: true, action: 'FALAR', executionTime: performance.now() - startTime };
 
         case 'NADA':
-          console.log('💤 Não fiz nada...');
-          break;
-
-        default:
-          throw new Error(`Ação desconhecida: ${String(decisao.acao)}`);
+          return { success: true, action: 'NADA', executionTime: performance.now() - startTime };
       }
-
-      const executionTime = performance.now() - startTime;
-
-      return {
-        success: true,
-        action: decisao.acao,
-        direction: decisao.direcao,
-        content: decisao.conteudo,
-        executionTime,
-      };
-    } catch (erro) {
-      const executionTime = performance.now() - startTime;
-      const errorMessage = erro instanceof Error ? erro.message : String(erro);
-
-      console.error('❌ Erro ao executar ação:', erro);
-
-      return {
-        success: false,
-        action: decisao.acao,
-        direction: decisao.direcao,
-        content: decisao.conteudo,
-        errorMessage,
-        executionTime,
-      };
+    } catch (err) {
+      console.error('Erro na ação:', err);
     }
-  }
-
-  private olharAoRedor(): void {
-    const jogadores = Object.values(this.bot.players).filter(
-      (p) => p.username !== this.bot.username && p.entity
-    );
-
-    if (jogadores.length > 0) {
-      const jogadorAleatorio =
-        jogadores[Math.floor(Math.random() * jogadores.length)];
-      if (jogadorAleatorio.entity) {
-        this.bot.lookAt(jogadorAleatorio.entity.position.offset(0, 1.6, 0));
-        console.log(`👀 Olhei para ${jogadorAleatorio.username}`);
-      }
-    } else {
-      const yaw = Math.random() * Math.PI * 2;
-      this.bot.look(yaw, 0);
-      console.log('👀 Olhei ao redor');
-    }
+    return { success: false, action: decisao.acao, executionTime: performance.now() - startTime };
   }
 }

@@ -12,7 +12,7 @@ export class GameLoop {
   private actionExecutor: ActionExecutor | null = null;
   private perceptionManager: PerceptionManager | null = null;
   private ultimaAcao = 'NADA';
-  private contadorAcoes = { FALAR: 0, ANDAR: 0, PULAR: 0, EXPLORAR: 0 };
+  private contadorAcoes = { FALAR: 0, ANDAR: 0, PULAR: 0, EXPLORAR: 0, COLETAR: 0, IR_ATE: 0 };
   private isRunning = false;
 
   constructor(botManager: BotManager, llmProvider: LLMProvider) {
@@ -55,10 +55,10 @@ export class GameLoop {
           continue;
         }
 
-        // 3. AÇÃO (agora retorna ActionResult completo)
+        // 3. AÇÃO (Executa via Pathfinder/CollectBlock/Tool)
         const result = await this.actionExecutor.executarAcao(decisao);
 
-        // 4. SALVAR MÉTRICAS DE AÇÃO
+        // 4. SALVAR MÉTRICAS
         collectActionMetric({
           userBotId,
           action: result.action,
@@ -78,9 +78,14 @@ export class GameLoop {
             this.contadorAcoes[result.action as keyof typeof this.contadorAcoes]++;
           }
           this.ultimaAcao = result.action;
+
+          if (result.action === 'COLETAR' || result.action === 'IR_ATE') {
+            console.log(`✅ Missão concluída: ${result.action}. Voltando ao modo autônomo.`);
+            this.perceptionManager.limparOrdem();
+          }
         }
 
-        await sleep(3000);
+        await sleep(2000);
       } catch (erro) {
         console.error('❌ Erro no loop:', erro);
         await sleep(5000);
@@ -118,7 +123,7 @@ export class GameLoop {
     if (bot) {
       this.actionExecutor = new ActionExecutor(bot);
       this.perceptionManager = new PerceptionManager(bot);
-      this.contadorAcoes = { FALAR: 0, ANDAR: 0, PULAR: 0, EXPLORAR: 0 };
+      this.contadorAcoes = { FALAR: 0, ANDAR: 0, PULAR: 0, EXPLORAR: 0, COLETAR: 0, IR_ATE: 0 };
     }
   }
 
