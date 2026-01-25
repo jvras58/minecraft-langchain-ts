@@ -132,9 +132,7 @@ export async function collectAndStoreMetric(data: MetricData): Promise<void> {
 
   let dynamicMetrics: DynamicMetrics;
   if (lastDynamicMetrics === null || Date.now() - lastDynamicCollectionTime > DYNAMIC_METRICS_INTERVAL) {
-    const start = Date.now();
     dynamicMetrics = await getDynamicMetrics();
-    const duration = Date.now() - start;
     lastDynamicMetrics = dynamicMetrics;
     lastDynamicCollectionTime = Date.now();
   } else {
