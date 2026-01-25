@@ -7,9 +7,10 @@ export interface BotConfig {
 }
 
 export interface BotAction {
-  acao: 'FALAR' | 'ANDAR' | 'PULAR' | 'OLHAR' | 'EXPLORAR' | 'PARAR' | 'NADA';
+  acao: "FALAR" | "ANDAR" | "PULAR" | "OLHAR" | "EXPLORAR" | "PARAR" | "NADA" | "MINERAR";
   conteudo?: string;
   direcao?: 'frente' | 'tras' | 'esquerda' | 'direita' | 'aleatorio';
+  alvo?: string;
 }
 
 export interface LLMProvider {

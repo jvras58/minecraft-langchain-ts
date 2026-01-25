@@ -59,25 +59,15 @@ export class GameLoop {
         const result = await this.actionExecutor.executarAcao(decisao);
 
         // 4. SALVAR MÉTRICAS DE AÇÃO
-        try {
-          await collectActionMetric({
-            userBotId,
-            action: result.action,
-            direction: result.direction,
-            content: result.content,
-            success: result.success,
-            errorMessage: result.errorMessage,
-            executionTime: result.executionTime,
-          });
-        } catch (metricError) {
-          console.error('Erro ao coletar métricas:', metricError);
-          if (result.success) {
-            console.warn(
-              `Métrica de ação não registrada para ação bem-sucedida. ` +
-              `userBotId=${userBotId}, ação=${result.action}, direção=${result.direction}`
-            );
-          }
-        }
+        collectActionMetric({
+          userBotId,
+          action: result.action,
+          direction: result.direction,
+          content: result.content,
+          success: result.success,
+          errorMessage: result.errorMessage,
+          executionTime: result.executionTime,
+        }).catch(err => console.error('Erro em background ao salvar métrica:', err));
 
         if (!result.success) {
           console.log(`⚠️  Ação ${result.action} falhou: ${result.errorMessage}`);

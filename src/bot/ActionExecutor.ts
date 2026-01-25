@@ -62,6 +62,23 @@ export class ActionExecutor {
         case 'OLHAR':
           this.olharAoRedor();
           break;
+        
+        // TODO: Separar para movementManager?
+        case 'MINERAR':
+          if (decisao.alvo) {
+            const bloco = this.bot.findBlock({
+              matching: (block) => block.name.includes(decisao.alvo!),
+              maxDistance: 4
+            });
+
+            if (bloco) {
+              await this.bot.dig(bloco);
+              console.log(`⛏️ Minerando: ${bloco.name}`);
+            } else {
+              throw new Error(`Bloco ${decisao.alvo} não encontrado por perto.`);
+            }
+          }
+          break;
 
         case 'NADA':
           console.log('💤 Não fiz nada...');

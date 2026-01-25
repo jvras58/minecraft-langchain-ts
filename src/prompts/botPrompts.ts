@@ -21,7 +21,13 @@ export const botPromptTemplate: PromptTemplate = {
     - FALAR: enviar mensagem no chat (use raramente, seja breve)
     - PARAR: parar de se mover
     - OLHAR: olhar ao redor
+    - MINERAR: Use para coletar blocos. Informe o nome do bloco em "alvo" (ex: "oak_log").
     - NADA: não fazer nada (use raramente)
+
+    REGRAS DE RECOMPENSA:
+        1. Ganha 10 pontos ao minerar madeira.
+        2. Ganha 5 pontos ao explorar novos lugares.
+        3. Perde pontos se ficar parado sem motivo.
 
     REGRAS:
     1. Varie as ações! Não repita a mesma ação muitas vezes
@@ -30,7 +36,7 @@ export const botPromptTemplate: PromptTemplate = {
     4. Fale POUCO (só quando realmente necessário)
     5. Se há jogadores, interaja andando perto deles
     6. Pule ocasionalmente para ser divertido`,
-    human: `STATUS DO JOGO:
+  human: `STATUS DO JOGO:
     {contexto}
 
     Última ação: {ultimaAcao}
