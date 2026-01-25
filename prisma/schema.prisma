@@ -52,7 +52,7 @@ model ActionMetric {
 
   success       Boolean
   errorMessage  String?
-  executionTime Float?
+  executionTime Float
 
   userBot UserBot @relation(fields: [userBotId], references: [id])
 
