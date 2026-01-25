@@ -66,6 +66,9 @@ export class ActionExecutor {
         case 'NADA':
           console.log('💤 Não fiz nada...');
           break;
+
+        default:
+          throw new Error(`Ação desconhecida: ${String(decisao.acao)}`);
       }
 
       const executionTime = performance.now() - startTime;
