@@ -130,10 +130,10 @@ export async function collectAndStoreMetric(data: MetricData): Promise<void> {
   const staticInfo = await getStaticHardwareInfo();
 
   let dynamicMetrics: DynamicMetrics;
-  if (lastDynamicMetrics === null || Date.now() - lastDynamicCollectionTime > DYNAMIC_METRICS_INTERVAL) {
+  if (lastDynamicMetrics === null || performance.now() - lastDynamicCollectionTime > DYNAMIC_METRICS_INTERVAL) {
     dynamicMetrics = await getDynamicMetrics();
     lastDynamicMetrics = dynamicMetrics;
-    lastDynamicCollectionTime = Date.now();
+    lastDynamicCollectionTime = performance.now();
   } else {
     dynamicMetrics = lastDynamicMetrics;
   }
