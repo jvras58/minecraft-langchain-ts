@@ -51,4 +51,7 @@ model ActionMetric {
   executionTime Float?
 
   userBot UserBot @relation(fields: [userBotId], references: [id])
+
+  @@index([userBotId, timestamp])
+  @@index([action])
 }
