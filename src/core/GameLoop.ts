@@ -6,6 +6,7 @@ import { botActionSchema } from '../schemas/botAction';
 import { sleep } from '../utils/sleep';
 import { collectActionMetric } from '../utils/metrics';
 import extractJson from 'extract-json-from-string';
+import { jsonrepair } from 'jsonrepair';
 
 export class GameLoop {
   private botManager: BotManager;
@@ -104,12 +105,19 @@ export class GameLoop {
         contadorAcoes: JSON.stringify(this.contadorAcoes),
       }, userBotId, 'action_decision');
 
-      console.log('Resposta do LLM:', resposta);  // Adicione esta linha para depuração
+      if (process.env.DEBUG) {
+        console.log('Resposta do LLM:', resposta);
+      }
 
       // Extraia apenas o JSON válido da resposta
-      const jsonExtraido = extractJson(resposta);
+      let jsonExtraido = extractJson(resposta);
       if (jsonExtraido.length === 0) {
-        throw new Error('Nenhum JSON válido encontrado na resposta');
+        // Tente reparar o JSON com jsonrepair
+        const respostaReparada = jsonrepair(resposta);
+        jsonExtraido = extractJson(respostaReparada);
+        if (jsonExtraido.length === 0) {
+          throw new Error('Nenhum JSON válido encontrado na resposta, mesmo após reparo');
+        }
       }
 
       // Pegue o primeiro objeto JSON extraído
@@ -120,7 +128,12 @@ export class GameLoop {
         parsed = parsed[0];
       }
 
-      const decisao = botActionSchema.parse(parsed);
+      const resultado = botActionSchema.safeParse(parsed);
+      if (!resultado.success) {
+        console.error('❌ JSON inválido para botActionSchema:', resultado.error);
+        return { acao: 'EXPLORAR' };
+      }
+      const decisao = resultado.data;
 
       return decisao;
     } catch (erro) {
