@@ -36,11 +36,30 @@ export class ActionExecutor {
           break;
 
         case 'EXPLORAR':
-          const x = this.bot.entity.position.x + (Math.random() * 40 - 20);
-          const z = this.bot.entity.position.z + (Math.random() * 40 - 20);
-          this.bot.pathfinder.setMovements(movements);
-          await this.bot.pathfinder.goto(new goals.GoalNear(x, this.bot.entity.position.y, z, 1));
-          return { success: true, action: 'EXPLORAR', executionTime: performance.now() - startTime };
+          let tentativas = 0;
+          const maxTentativas = 5;
+          while (tentativas < maxTentativas) {
+            const x = this.bot.entity.position.x + (Math.random() * 40 - 20);
+            const z = this.bot.entity.position.z + (Math.random() * 40 - 20);
+            const y = this.bot.entity.position.y;
+            const goal = new goals.GoalNear(x, y, z, 1);
+            
+            try {
+              this.bot.pathfinder.setMovements(movements);
+              await this.bot.pathfinder.goto(goal);
+              return { success: true, action: 'EXPLORAR', executionTime: performance.now() - startTime };
+            } catch (err) {
+              tentativas++;
+              const errorMessage = err instanceof Error ? err.message : String(err);
+              console.warn(`Tentativa ${tentativas} falhou para EXPLORAR: ${errorMessage}`);
+            }
+          }
+          // Fallback: mover aleatoriamente sem pathfinder
+          this.bot.setControlState('forward', true);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          this.bot.setControlState('forward', false);
+          return { success: false, action: 'EXPLORAR', executionTime: performance.now() - startTime };
+
 
         case 'PULAR':
           this.bot.setControlState('jump', true);
