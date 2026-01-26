@@ -15,6 +15,7 @@ export const botPromptTemplate: PromptTemplate = {
   human: `
     SITUAÇÃO DO JOGO: {contexto}
     ÚLTIMA AÇÃO: {ultimaAcao}
+    CONTADOR DE AÇÕES: {contadorAcoes}
     
-    O que você decide fazer agora para parecer um jogador real e sintonizado com o mundo? Considere variar ações e interagir mais se houver oportunidades.`
+    O que você decide fazer agora para parecer um jogador real e sintonizado com o mundo? Considere variar ações e interagir mais se houver oportunidades. Evite repetições: se uma ação foi usada recentemente, escolha outra (ex.: não fale a mesma coisa consecutivamente).`
 };
