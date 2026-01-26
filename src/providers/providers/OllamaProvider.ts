@@ -23,8 +23,11 @@ export class OllamaProvider extends BaseLLMProvider {
     userBotId: string,
     taskName?: string
   ): Promise<string> {
+    const contexto = variables.contexto || '';
+    const contextoComInstrucao = `${contexto}\n\nInstrução: Retorne apenas um objeto JSON válido com as chaves necessárias, sem texto extra. Exemplo: {"acao": "EXPLORAR"}.`;
+
     const humanMessage = this.promptTemplate.human
-      .replace('{contexto}', variables.contexto || '')
+      .replace('{contexto}', contextoComInstrucao)
       .replace('{ultimaAcao}', variables.ultimaAcao || '')
       .replace('{contadorAcoes}', variables.contadorAcoes || '');
 

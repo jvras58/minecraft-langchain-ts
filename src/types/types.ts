@@ -5,6 +5,7 @@ declare module 'mineflayer' {
         priority: string;
         bannedFood: string[];
       };
+      setOpts(opts: { priority: string; startAt: number; bannedFood: string[] }): void;
     };
     collectBlock: any;
     tool: any;

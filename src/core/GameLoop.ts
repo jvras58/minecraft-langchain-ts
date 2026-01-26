@@ -5,6 +5,7 @@ import { PerceptionManager } from '../bot/PerceptionManager';
 import { botActionSchema } from '../schemas/botAction';
 import { sleep } from '../utils/sleep';
 import { collectActionMetric } from '../utils/metrics';
+import extractJson from 'extract-json-from-string';
 
 export class GameLoop {
   private botManager: BotManager;
@@ -103,12 +104,22 @@ export class GameLoop {
         contadorAcoes: JSON.stringify(this.contadorAcoes),
       }, userBotId, 'action_decision');
 
-      const textoLimpo = resposta
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
+      console.log('Resposta do LLM:', resposta);  // Adicione esta linha para depuração
 
-      const parsed = JSON.parse(textoLimpo);
+      // Extraia apenas o JSON válido da resposta
+      const jsonExtraido = extractJson(resposta);
+      if (jsonExtraido.length === 0) {
+        throw new Error('Nenhum JSON válido encontrado na resposta');
+      }
+
+      // Pegue o primeiro objeto JSON extraído
+      let parsed = jsonExtraido[0];
+
+      // Se for array, pegue o primeiro elemento
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed = parsed[0];
+      }
+
       const decisao = botActionSchema.parse(parsed);
 
       return decisao;
@@ -117,6 +128,7 @@ export class GameLoop {
       return { acao: 'EXPLORAR' };
     }
   }
+
 
   private onBotConnected(): void {
     const bot = this.botManager.getBot();

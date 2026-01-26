@@ -1,14 +1,13 @@
 import mineflayer, { Bot } from 'mineflayer';
-import { pathfinder } from 'mineflayer-pathfinder';
-const collectBlock = require('mineflayer-collectblock').plugin;
-const tool = require('mineflayer-tool').plugin;
-const autoeat = require('mineflayer-auto-eat').plugin;
+const pathfinderPkg = require('mineflayer-pathfinder');
+const collectBlockPkg = require('mineflayer-collectblock');
+const toolPkg = require('mineflayer-tool');
+const autoeatPkg = require('mineflayer-auto-eat');
 
 import { BotConfig } from '../types/types';
 import { MovementManager } from './MovementManager';
 import { getOrCreateUserBot } from '../utils/metrics';
 import { PerceptionManager } from './PerceptionManager';
-
 
 /**
  * Gerencia a criação e gerenciamento do bot
@@ -22,7 +21,6 @@ export class BotManager {
   private onDisconnected?: () => void;
   public userBotId: string | null = null;
   public perceptionManager: PerceptionManager | null = null;
-
 
   constructor(config: BotConfig) {
     this.config = config;
@@ -43,14 +41,10 @@ export class BotManager {
     this.perceptionManager = new PerceptionManager(this.bot);
 
     // Carregamento de Plugins
-    this.bot.loadPlugin(pathfinder);
-    this.bot.loadPlugin(collectBlock);
-    this.bot.loadPlugin(tool);
-    this.bot.loadPlugin(autoeat);
-
-    // Configuração do Auto-Eat para sobrevivência
-    this.bot.autoEat.options.priority = 'foodPoints';
-    this.bot.autoEat.options.bannedFood = ['rotten_flesh', 'pufferfish'];
+    this.bot.loadPlugin(pathfinderPkg.pathfinder);
+    this.bot.loadPlugin(collectBlockPkg.plugin);
+    this.bot.loadPlugin(toolPkg.plugin);
+    this.bot.loadPlugin(autoeatPkg.loader);
 
     this.setupEventHandlers();
   }
@@ -69,6 +63,16 @@ export class BotManager {
     this.bot.on('spawn', () => {
       console.log('✅ Bot entrou no jogo!');
       this.connected = true;
+
+      // Configuração do Auto-Eat após spawn usando setOpts
+      if (this.bot?.autoEat) {
+        this.bot.autoEat.setOpts({
+          priority: 'foodPoints',
+          startAt: 14,
+          bannedFood: ['rotten_flesh', 'pufferfish', 'spider_eye', 'poisonous_potato']
+        });
+      }
+
       this.onConnected?.();
     });
 
@@ -76,7 +80,7 @@ export class BotManager {
       if (username === this.bot?.username) return;
 
       // TODO: Colocar como .env ou configuração externa...
-      const mestre = "SeuNickAqui"; 
+      const mestre = "jvras58"; 
 
       if (username === mestre) {
         console.log(`👑 Ordem recebida de ${username}: ${message}`);
