@@ -76,6 +76,35 @@ export class ActionExecutor {
           if (decisao.conteudo) this.bot.chat(decisao.conteudo);
           return { success: true, action: 'FALAR', executionTime: performance.now() - startTime };
 
+        case 'ANDAR':
+          this.bot.setControlState('forward', true);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          this.bot.setControlState('forward', false);
+          return { success: true, action: 'ANDAR', executionTime: performance.now() - startTime };
+        case 'PARAR':
+          this.bot.clearControlStates();
+          if (this.bot.pathfinder) {
+            try {
+              this.bot.pathfinder.stop();
+              this.bot.pathfinder.setGoal(null);
+            } catch {
+              // Ignorar erros ao parar o pathfinder
+            }
+          }
+          return { success: true, action: 'PARAR', executionTime: performance.now() - startTime };
+        case 'MINERAR':
+          if (decisao.alvo) {
+            const blocoMinerar = this.bot.findBlock({
+              matching: (b) => b.name.includes(decisao.alvo || ''),
+              maxDistance: 32
+            });
+            if (blocoMinerar) {
+              await this.bot.dig(blocoMinerar);
+              return { success: true, action: 'MINERAR', executionTime: performance.now() - startTime };
+            }
+          }
+          break;
+
         case 'NADA':
           return { success: true, action: 'NADA', executionTime: performance.now() - startTime };
       }
