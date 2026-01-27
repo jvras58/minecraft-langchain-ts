@@ -5,13 +5,11 @@ Este documento descreve a arquitetura do projeto usando o [modelo C4](https://c4
 Visão geral do sistema, mostrando os atores externos e o sistema principal.
 
 ```mermaid
-
 graph TD
     A[Jogador de Minecraft] --> B[Servidor Minecraft]
     B --> C[Bot de Minecraft com IA]
-    C --> D[Provedor de IA (Groq/Ollama)]
+    C --> D["Provedor de IA (Groq/Ollama)"]
     E[Administrador] --> C
-
 ```
 
 - **Jogador de Minecraft**: Interage com o bot no servidor.
@@ -32,7 +30,6 @@ graph TD
         F --> I[PerceptionManager]
         F --> J[LLMProvider]
         G --> K[Mineflayer]
-        H --> L[MovementManager]
     end
     M[Servidor Minecraft] --> K
     N[Provedor de IA] --> J
@@ -42,10 +39,9 @@ graph TD
 - **Aplicação Node.js**: Executa o bot em TypeScript.
   - GameLoop: Coordena o loop de percepção → pensamento → ação.
   - BotManager: Gerencia conexão com Minecraft via Mineflayer.
-  - ActionExecutor: Executa ações decididas.
+  - ActionExecutor: Executa ações decididas que Controla movimento do bot.
   - PerceptionManager: Coleta dados do ambiente.
   - LLMProvider: Interface com IA (Groq ou Ollama).
-  - MovementManager: Controla movimento do bot.
 - **Servidor Minecraft**: Hospeda o mundo e jogadores.
 - **Provedor de IA**: API externa para geração de decisões.
 - **Configurações**: Arquivo .env para parâmetros.
@@ -64,7 +60,6 @@ graph TD
     F --> G[botActionSchema.parse]
     D --> H[ActionExecutor.constructor]
     D --> I[PerceptionManager.constructor]
-    H --> J[MovementManager.constructor]
     K[BotManager] --> L[createBot]
     L --> M[mineflayer.createBot]
     M --> N[setupEventHandlers]
@@ -77,9 +72,8 @@ graph TD
 
 - **GameLoop**: Loop principal com métodos para executar o ciclo.
 - **BotManager**: Gerencia eventos e reconexão.
-- **ActionExecutor**: Executa ações como andar, falar, etc.
+- **ActionExecutor**: Executa ações como andar, falar, etc Controla movimento e navegação.
 - **PerceptionManager**: Coleta contexto (vida, posição, etc.).
-- **MovementManager**: Controla movimento e navegação.
 - **LLMProvider**: Abstração para provedores de IA.
 
 ## 4. Code Diagram (C4)
@@ -106,12 +100,6 @@ classDiagram
         +executarAcao()
         -olharAoRedor()
     }
-    class MovementManager {
-        +andarNaDirecao()
-        +explorarAleatorio()
-        +pararMovimento()
-        +pular()
-    }
     class PerceptionManager {
         +getGameContext()
     }
@@ -129,8 +117,7 @@ classDiagram
     GameLoop --> ActionExecutor
     GameLoop --> PerceptionManager
     GameLoop --> BaseLLMProvider
-    ActionExecutor --> MovementManager
-    BotManager --> MovementManager
+    ActionExecutor --> BotManager
     BaseLLMProvider <|-- GroqProvider
     BaseLLMProvider <|-- OllamaProvider
 ```
