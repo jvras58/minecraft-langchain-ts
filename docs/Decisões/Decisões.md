@@ -45,3 +45,23 @@ Optei por deixar o repositório inicial **bem fácil de implementar mais coisas*
 ## Conclusão
 
 A migração para Node.js/TypeScript com LangChain foi essencial para manter a simplicidade e eficiência do projeto, priorizando a integração robusta com Minecraft via Mineflayer. A arquitetura extensível garante que o template possa evoluir facilmente para incluir novas funcionalidades de IA e comandos.
+
+## Substituição do MovementManager pelo ActionExecutor
+
+Inicialmente, o projeto utilizava o arquivo `MovementManager.ts` para gerenciar os movimentos do bot, que funcionava bem para ações básicas de locomoção. No entanto, para aumentar a flexibilidade e eficiência das interações no Minecraft, optamos por substituir essa implementação pela adoção direta dos plugins no `ActionExecutor.ts`, que integra plugins avançados do Mineflayer.
+
+### Plugins Utilizados:
+- **mineflayer-pathfinder**: Permite navegação inteligente e planejamento de caminhos no mundo do Minecraft.
+- **mineflayer-collectblock**: Especializado em detectar blocos específicos e realizar coleta/mineração automática.
+- **mineflayer-tool**: Facilita o gerenciamento e uso de ferramentas para otimizar tarefas como mineração.
+- **mineflayer-auto-eat**: Mantém o bot vivo automaticamente, gerenciando a fome e consumindo alimentos quando necessário.
+
+### Motivos da Substituição:
+- **Maior Flexibilidade**: Os plugins oferecem funcionalidades especializadas que o `MovementManager` não conseguia replicar de forma eficiente, como mineração direcionada e manutenção automática da saúde.
+- **Integração Nativa**: Esses plugins são projetados especificamente para o Mineflayer, garantindo melhor performance e compatibilidade.
+- **Centralização de Ações**: O `ActionExecutor` consolida todas as ações do bot em um único módulo, simplificando a lógica e facilitando expansões futuras.
+
+### Benefícios:
+- **Funcionalidades Avançadas**: Permite ações mais complexas, como exploração inteligente e coleta automatizada de recursos.
+- **Manutenibilidade Melhorada**: Código mais modular e fácil de atualizar com novos plugins.
+- **Experiência de Jogo Otimizada**: O bot agora pode operar de forma mais autônoma e eficiente no ambiente do Minecraft.
