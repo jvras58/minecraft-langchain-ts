@@ -17,10 +17,10 @@ interface QueuedActionMetric extends ActionMetricData {
  * Acumula métricas em memória e grava no banco em lotes.
  *
  * Por que isso importa:
- * - Cada escrita SQLite envolve I/O de disco e lock do banco
+ * - Cada escrita individual no banco envolve transação, I/O e possível latência de rede (ex.: PostgreSQL)
  * - Com LLM local (Ollama), o bot pode gerar 10+ métricas por minuto
  * - Batch de 20 métricas = 1 transação em vez de 20 transações separadas
- * - Reduz overhead de ~95% no I/O de métricas
+ * - Reduz significativamente o overhead de I/O/round-trips de métricas
  */
 export class MetricsBatcher {
   private static instance: MetricsBatcher;
