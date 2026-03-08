@@ -1,118 +1,183 @@
 # Sistema de Métricas - Minecraft LangChain Template
 
 ## Visão Geral
-O sistema de métricas é responsável por coletar, armazenar e analisar dados de performance das interações com provedores de IA (Groq e Ollama). Ele registra informações sobre tempo de resposta, uso de tokens e detalhes do ambiente de hardware onde o bot está rodando.
+O sistema de métricas é responsável por coletar, armazenar e analisar dados de performance das interações com provedores de IA (Groq e Ollama). Ele registra informações sobre tempo de resposta, uso de tokens, dados de hardware e ações executadas pelo bot.
 
 ## O que Foi Implementado
 
 ### 1. Modelo de Dados (Prisma)
-- **Tabela Metric**: Armazena métricas de cada chamada de IA
-  - `id`: Identificador único
-  - `timestamp`: Data/hora da coleta
-  - `provider`: Nome do provedor (Groq/Ollama)
-  - `model`: Modelo específico usado
-  - `inputTokens`: Número estimado de tokens de entrada
-  - `outputTokens`: Número estimado de tokens de saída
-  - `responseTime`: Tempo de resposta em segundos
-  - `environment`: JSON com dados de hardware (CPU, memória, GPU)
 
-### 2. Coleta de Dados com Callbacks do LangChain
-- **Classe `MetricsCallbackHandler`**: Callback handler customizado que intercepta eventos do LLM
-  - Localização: `src/utils/MetricsCallbackHandler.ts`
-  - Estende `BaseCallbackHandler` do `@langchain/core`
-  - Captura métricas reais via `handleLLMStart()` e `handleLLMEnd()`
+**Banco**: PostgreSQL via Neon (configurado em `DATABASE_URL`).
 
-- **Extração Híbrida de Tokens** (prioridade):
-  1. `response_metadata` das gerações (mais confiável para ChatModels)
-  2. `llmOutput.tokenUsage` (fallback para alguns providers)
-  3. Formato Ollama específico (`prompt_eval_count`, `eval_count`)
-  4. Estimativa (1 token ≈ 4 caracteres) - último recurso
+**Tabela `Metric`** — métricas de cada chamada ao LLM:
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | String (cuid) | Identificador único |
+| `userBotId` | String | Referência ao bot que gerou a métrica |
+| `timestamp` | DateTime | Data/hora da coleta |
+| `provider` | String | Nome do provedor (Groq / Ollama) |
+| `model` | String | Modelo específico usado |
+| `inputTokens` | Int? | Tokens de entrada (extraído da API) |
+| `outputTokens` | Int? | Tokens de saída (extraído da API) |
+| `responseTime` | Float | Tempo de resposta em **segundos** |
+| `gpuName` | String? | Nome da GPU no momento da chamada |
+| `cpuName` | String? | Nome da CPU no momento da chamada |
+| `os` | String? | Sistema operacional |
+| `taskName` | String? | Nome da tarefa associada (opcional) |
+| `environment` | Json | Snapshot detalhado de hardware (ver abaixo) |
 
-- **Métricas Capturadas**:
-  - `responseTime`: Tempo real medido com `performance.now()` (em segundos)
-  - `inputTokens`: Extraído de múltiplas fontes via `extractTokenUsage()`
-  - `outputTokens`: Extraído de múltiplas fontes via `extractTokenUsage()`
+**Tabela `ActionMetric`** — métricas de cada ação executada pelo bot:
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `action` | String | Tipo de ação (FALAR, ANDAR, PULAR, etc.) |
+| `success` | Boolean | Se a ação foi executada com sucesso |
+| `executionTime` | Float | Tempo de execução em ms |
+| `errorMessage` | String? | Mensagem de erro, se houver |
 
-- **Providers Suportados**: Groq, Ollama, OpenAI e outros compatíveis com LangChain
-- **Função `collectAndStoreMetric`**: Registra métricas no Prisma após cada chamada
+**Tabela `UserBot`** — referência ao bot:
+- Relaciona `Metric` e `ActionMetric` via `userBotId`
 
-### 3. Dados de Hardware
-- **Biblioteca systeminformation**: Coleta informações do sistema
-- **Dados Coletados**:
-  - CPU: fabricante, marca, núcleos, velocidade
-  - Memória: total e livre
-  - GPU: modelo, fabricante, VRAM
-- **Formato**: Dados serializados em JSON na coluna `environment`
+### 2. Fluxo de Coleta de Métricas
 
-### 4. Armazenamento
-- **Banco SQLite**: Via Prisma ORM
-- **Instância Singleton**: Uso compartilhado do Prisma Client em `src/utils/db.ts`
-- **Push**: Use `npx prisma db push` para subir o schema para o banco de dados
+A coleta acontece em três camadas independentes:
+
+```
+Provider (callModel)
+   └─> BaseLLMProvider.invoke()   ← mede responseTimeMs com performance.now()
+         └─> MetricsBatcher.pushLLMMetric()   ← enfileira sem bloquear
+               └─> HardwareMonitor.getSnapshot()  ← snapshot de hardware (throttled)
+                     └─> flush() a cada 10s ou 20 métricas   ← escreve no banco em lote
+```
+
+#### `BaseLLMProvider` (`src/providers/BaseLLMProvider.ts`)
+- Classe abstrata que todos os providers estendem
+- Mede o tempo de resposta automaticamente via `performance.now()` antes e após `callModel()`
+- Chama `MetricsBatcher.pushLLMMetric()` de forma **fire-and-forget** (não bloqueia a resposta ao agente)
+- Cada provider implementa `callModel()` e retorna `{ content, inputTokens, outputTokens }`
+
+#### Extração de Tokens por Provider
+- **Groq**: extraído de `result.response_metadata` → `token_usage` → campos `prompt_tokens` / `completion_tokens`
+- **Ollama**: extraído de `result.response_metadata` → campos `prompt_eval_count` / `eval_count`
+- Campos opcionais (`Int?`): se a API não retornar, o registro é salvo com `null`
+
+### 3. `MetricsBatcher` (`src/metrics/MetricsBatcher.ts`)
+
+Acumula métricas em memória e grava no banco em **lotes via transação única**, reduzindo o I/O em ~95%.
+
+- **Singleton**: uma instância compartilhada em todo o processo
+- **Fila dupla**: `llmQueue` (métricas LLM) e `actionQueue` (métricas de ação)
+- **Flush automático**: a cada `batchFlushIntervalMs` (padrão: **10s**) via `setInterval`
+- **Flush por tamanho**: quando a fila acumula `batchMaxSize` itens (padrão: **20**)
+- **Transação única**: todas as escritas pendentes são feitas em um único `prisma.$transaction()`
+- O timer usa `.unref()` para não impedir o processo de encerrar normalmente
+
+```typescript
+// Configuração em src/config/settings.ts
+export const metricsConfig = {
+  batchFlushIntervalMs: 10_000,   // flush a cada 10s
+  batchMaxSize: 20,               // ou ao acumular 20 itens
+  hardwarePollIntervalMs: 5_000,  // throttle do HardwareMonitor
+};
+```
+
+### 4. `HardwareMonitor` (`src/metrics/HardwareMonitor.ts`)
+
+Coleta dados de hardware com **cache agressivo em duas camadas**:
+
+- **Info estática** (coletada uma única vez por processo): modelo de CPU, GPU, SO, RAM total
+- **Info dinâmica** (throttled por `hardwarePollIntervalMs`, padrão 5s): % de CPU, RAM livre, temperatura e uso da GPU
+
+```json
+// Estrutura do campo environment salvo no banco
+{
+  "cpu":    { "manufacturer": "AMD", "brand": "Ryzen 9", "cores": 16, "speed": 3.7 },
+  "memory": { "total": 34359738368 },
+  "gpu":    [{ "model": "RTX 4070", "vendor": "NVIDIA", "vram": 12288 }],
+  "dynamic": {
+    "cpuUsage": 34.2,
+    "ramUsed": 12345678,
+    "ramFree": 21985432,
+    "gpuUsage": 12,
+    "gpuTemp": 51
+  }
+}
+```
+
+- Biblioteca: `systeminformation`
+- O snapshot é capturado no momento do `pushLLMMetric()`, não no flush
+
+### 5. Armazenamento
+- **Banco PostgreSQL (Neon)**: via Prisma ORM
+- **Instância Singleton**: `src/utils/db.ts` exporta um único `PrismaClient`
+- **Índices**: `(userBotId, timestamp)`, `provider`, `taskName` para queries eficientes
 
 ## Como Usar
 
-### Uso nos Providers
-O callback é usado automaticamente nos providers:
+### Inicialização
+O `MetricsBatcher` precisa ser iniciado junto com o agente:
 ```typescript
-import { MetricsCallbackHandler } from '../../utils/MetricsCallbackHandler';
+import { MetricsBatcher } from './metrics/MetricsBatcher';
 
-// No método invoke do provider
-const metricsCallback = new MetricsCallbackHandler({
-  provider: 'Groq',
-  model: this.modelName,
-  userBotId,
+MetricsBatcher.getInstance().start();
+```
+
+### Coleta Automática via Providers
+Nenhuma configuração adicional é necessária. Ao chamar `provider.invoke()`, as métricas são capturadas automaticamente:
+```typescript
+const response = await provider.invoke(messages, {
+  userBotId: 'id-do-bot',
+  taskName: 'decisao-principal', // opcional
 });
+// response.tokenUsage.inputTokens, response.responseTimeMs disponíveis
+```
 
-const result = await this.llm.invoke(messages, {
-  callbacks: [metricsCallback],
+### Métricas de Ação
+Chamadas pelo `ActionExecutor` diretamente:
+```typescript
+MetricsBatcher.getInstance().pushActionMetric({
+  userBotId,
+  action: result.action,
+  success: result.success,
+  executionTimeMs: result.executionTime,
 });
 ```
 
 ### Ver Dados
-- Use Prisma Studio: `npx prisma studio`
-- Ou queries diretas no código
+```bash
+pnpm db:studio   # abre Prisma Studio no browser
+pnpm db:push     # aplica schema no banco
+pnpm db:generate # regenera Prisma Client
+```
 
-## O que é Proposto Obter
+## Objetivos e Próximos Passos
 
 ### Objetivos
-- Monitorar performance dos provedores de IA
-- Analisar eficiência de modelos em diferentes hardwares
-- Identificar gargalos e otimizar uso de recursos
-- Fornecer dados para tomada de decisões sobre escolha de provedor/modelo
-
-
-### Outputs Esperados
-
-- Insights sobre escalabilidade em diferentes hardwares
+- Monitorar performance dos provedores de IA em hardware real
+- Correlacionar latência com uso de CPU/GPU no momento da chamada
+- Rastrear taxa de sucesso das ações do bot
+- Fornecer dados para decisões sobre escolha de provedor/modelo
 
 ### Próximos Passos
 - **Dashboard Web**: Interface para visualizar métricas em tempo real
-- **Análises Estatísticas**: Médias, medianas, distribuições
-- **Comparação de Modelos**: Gráficos de performance entre provedores
+- **Análises Estatísticas**: Médias, medianas, distribuições por provider/modelo
+- **Comparação de Modelos**: Gráficos de performance entre Groq e Ollama
 - **Exportação**: Relatórios em CSV/JSON
-- **Banco de Dados Online**: Migrar para um banco cloud (ex: Prisma Postgres ou Neon) para reduzir carga local e permitir acesso remoto às métricas
-- ~~**Integração Nativa com LangChain**~~: ✅ Implementado via `MetricsCallbackHandler`
+- ~~**Banco de Dados Online**~~: ✅ Migrado para PostgreSQL Neon
+- ~~**Integração com LangChain Callbacks**~~: Removido — tokens extraídos diretamente do `response_metadata`
 
 ---
 
 ## Decisões de Design
 
-### Snapshot por Interação (Abordagem Atual)
+### Batch de Métricas em vez de Escrita Imediata
+Cada escrita no banco envolve I/O de disco e lock de conexão. Com Ollama local, o bot pode gerar 10+ métricas LLM por minuto. Escrever em lote reduz o overhead de ~95% sem perda de dados (as métricas ficam em memória até o flush).
 
-Cada chamada ao LLM cria um registro completo incluindo dados de hardware:
+### Hardware Snapshot no Enfileiramento, não no Flush
+O snapshot de hardware é capturado no `pushLLMMetric()` para registrar o estado *no momento da chamada*, não segundos depois. A info dinâmica é throttled para evitar chamadas excessivas a `systeminformation`.
 
-```
-Metric: { tokens, latência, environment: {CPU, RAM, GPU} }
-```
+### Info Estática vs. Dinâmica Separadas
+CPU model e GPU model raramente mudam durante execução — são coletados uma única vez e reutilizados. Já CPU%, RAM livre e GPU temp variam constantemente e são re-coletados via throttle de 5s.
 
-**Por que essa abordagem?**
-- ✅ **Precisão histórica**: Captura o estado exato do hardware no momento da chamada
-- ✅ **Simplicidade de queries**: Cada registro é autocontido, sem necessidade de JOINs
-- ✅ **Análise de benchmark**: Facilita correlacionar performance com recursos disponíveis
-- ⚠️ **Trade-off**: Dados de environment são repetidos (redundância aceita)
-
-**Alternativa considerada (Session-based)**:
-Criar tabela `Session` com environment e referenciar em `Metric`. Não implementado porque:
-- Memória livre varia constantemente durante execução
-- Adiciona complexidade sem ganho significativo para SQLite local
+### Tokens como `Int?` (nullable)
+Nem todos os providers retornam contagem de tokens (ex: Ollama em alguns modos). Usar `Int?` em vez de estimativas garante que o dado salvo seja sempre real ou ausente — nunca fabricado.
 
