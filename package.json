@@ -1,33 +1,27 @@
 {
   "name": "minecraft-langchain-template",
-  "version": "1.0.0",
-  "description": "Bot de Minecraft com IA usando Groq e LangChain",
+  "version": "2.0.0",
+  "description": "Bot autônomo de Minecraft com IA - Arquitetura modular",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:push": "npx prisma db push",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio"
   },
-  "keywords": [
-    "minecraft",
-    "bot",
-    "ai",
-    "groq",
-    "langchain"
-  ],
-  "author": "",
+  "keywords": ["minecraft", "bot", "ai", "langchain", "autonomous-agent"],
   "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.3.0",
     "@langchain/groq": "^0.1.0",
     "@langchain/ollama": "^1.1.0",
     "@prisma/client": "^6.19.0",
-    "@types/express": "^5.0.6",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1",
     "mineflayer": "^4.20.1",
-    "performance-now": "^2.1.0",
+    "jsonrepair": "^3.11.3",
     "prisma": "^6.19.0",
     "systeminformation": "^5.27.14",
     "zod": "^4.1.13"
