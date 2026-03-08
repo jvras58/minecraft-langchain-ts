@@ -1,50 +1,43 @@
 import { ChatGroq } from '@langchain/groq';
-import { BaseLLMProvider } from '../LLMProvider';
-import { PromptTemplate } from '../../types/types';
-import { MetricsCallbackHandler } from '../../utils/MetricsCallbackHandler';
+import { BaseLLMProvider } from '../BaseLLMProvider';
+import { ChatMessage, InvokeOptions } from '../../types/types';
 
 export class GroqProvider extends BaseLLMProvider {
+  readonly providerName = 'Groq';
+  readonly modelName: string;
   private llm: ChatGroq;
-  private promptTemplate: PromptTemplate;
-  private modelName = 'llama-3.3-70b-versatile';
 
-  constructor(apiKey: string, promptTemplate: PromptTemplate) {
+  constructor(apiKey: string, model?: string) {
     super();
+    this.modelName = model || 'llama-3.3-70b-versatile';
     this.llm = new ChatGroq({
       apiKey,
       model: this.modelName,
       temperature: 0.8,
     });
-    this.promptTemplate = promptTemplate;
   }
 
-  async invoke(
-    variables: Record<string, any>,
-    userBotId: string,
-    taskName?: string
-  ): Promise<string> {
-    const humanMessage = this.promptTemplate.human
-      .replace('{contexto}', variables.contexto || '')
-      .replace('{ultimaAcao}', variables.ultimaAcao || '')
-      .replace('{contadorAcoes}', variables.contadorAcoes || '');
+  protected async callModel(
+    messages: ChatMessage[],
+    _options?: InvokeOptions,
+  ) {
+    const result = await this.llm.invoke(
+      messages.map((m) => ({ role: m.role as any, content: m.content })),
+    );
 
-    const messages = [
-      { role: 'system', content: this.promptTemplate.system },
-      { role: 'user', content: humanMessage }
-    ];
+    // Extrai tokens do response_metadata (Groq fornece via API)
+    const meta = (result as any).response_metadata;
+    const usage =
+      meta?.token_usage ?? meta?.tokenUsage ?? meta?.usage ?? {};
 
-    // Callback para métricas automáticas
-    const metricsCallback = new MetricsCallbackHandler({
-      provider: 'Groq',
-      model: this.modelName,
-      userBotId,
-      taskName,
-    });
-
-    const result = await this.llm.invoke(messages, {
-      callbacks: [metricsCallback],
-    });
-
-    return result.content as string;
+    return {
+      content: result.content as string,
+      inputTokens:
+        usage.prompt_tokens ?? usage.promptTokens ?? usage.input_tokens,
+      outputTokens:
+        usage.completion_tokens ??
+        usage.completionTokens ??
+        usage.output_tokens,
+    };
   }
 }
