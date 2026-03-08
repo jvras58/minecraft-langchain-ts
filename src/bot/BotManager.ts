@@ -1,12 +1,8 @@
 import mineflayer, { Bot } from 'mineflayer';
 import { BotConfig } from '../types/types';
 import { MovementManager } from './MovementManager';
-import { getOrCreateUserBot } from '../utils/metrics';
+import { getOrCreateUserBot } from '../utils/userBot';
 
-/**
- * Gerencia a criação e gerenciamento do bot
- * Inclui: conexão, desconexão, eventos e movimentos
- */
 export class BotManager {
   private bot: Bot | null = null;
   private config: BotConfig;
@@ -26,12 +22,9 @@ export class BotManager {
 
   async createBot(): Promise<void> {
     console.log('🔌 Conectando ao servidor...');
-
     this.userBotId = await getOrCreateUserBot(this.config.username);
-
     this.bot = mineflayer.createBot(this.config);
-
-    this.setupEventHandlers();
+    this.setupEvents();
   }
 
   getBot(): Bot | null {
@@ -42,7 +35,7 @@ export class BotManager {
     return this.connected && this.bot !== null;
   }
 
-  private setupEventHandlers(): void {
+  private setupEvents(): void {
     if (!this.bot) return;
 
     this.bot.on('spawn', () => {
@@ -51,53 +44,47 @@ export class BotManager {
       this.onConnected?.();
     });
 
-    this.bot.on('chat', (usuario, mensagem) => {
-      if (usuario === this.bot?.username) return;
-      console.log(`💬 ${usuario}: ${mensagem}`);
+    this.bot.on('chat', (user, msg) => {
+      if (user === this.bot?.username) return;
+      console.log(`💬 ${user}: ${msg}`);
     });
 
     this.bot.on('death', () => {
       console.log('💀 Morri! Respawnando...');
-      const movementManager = new MovementManager(this.bot!);
-      movementManager.pararMovimento();
+      if (this.bot) new MovementManager(this.bot).pararMovimento();
     });
 
-    this.bot.on('end', (razao) => {
-      console.log(`❌ Bot desconectado. Motivo: ${razao}`);
+    this.bot.on('end', (reason) => {
+      console.log(`❌ Desconectado: ${reason}`);
       this.connected = false;
       this.onDisconnected?.();
-      const movementManager = new MovementManager(this.bot!);
-      movementManager.pararMovimento();
-
-      console.log('🔄 Reconectando em 5 segundos...');
+      console.log('🔄 Reconectando em 5s...');
       setTimeout(() => this.createBot(), 5000);
     });
 
-    this.bot.on('error', (erro) => {
-      console.error('⚠️  Erro de conexão:', erro.message);
+    this.bot.on('error', (err) => {
+      console.error('⚠️  Erro:', err.message);
     });
 
-    this.bot.on('kicked', (razao) => {
-      console.log(`👢 Fui kickado! Razão: ${razao}`);
+    this.bot.on('kicked', (reason) => {
+      console.log(`👢 Kickado: ${reason}`);
     });
 
+    // Auto-pulo quando preso
     this.bot.on('physicsTick', () => {
       if (!this.bot || !this.isConnected()) return;
+      if (!this.bot.entity.onGround) return;
 
-      if (this.bot.entity.onGround && this.bot.entity.velocity.y === 0) {
-        const estaAndando =
-          this.bot.controlState.forward ||
-          this.bot.controlState.back ||
-          this.bot.controlState.left ||
-          this.bot.controlState.right;
+      const walking =
+        this.bot.controlState.forward ||
+        this.bot.controlState.back ||
+        this.bot.controlState.left ||
+        this.bot.controlState.right;
 
-        if (estaAndando) {
-          const vel = this.bot.entity.velocity;
-          if (Math.abs(vel.x) < 0.01 && Math.abs(vel.z) < 0.01) {
-            if (Math.random() > 0.7) {
-              this.bot.setControlState('jump', true);
-            }
-          }
+      if (walking) {
+        const v = this.bot.entity.velocity;
+        if (Math.abs(v.x) < 0.01 && Math.abs(v.z) < 0.01 && Math.random() > 0.7) {
+          this.bot.setControlState('jump', true);
         }
       }
     });
