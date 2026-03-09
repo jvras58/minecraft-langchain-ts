@@ -1,8 +1,9 @@
-import { BotAction, LLMProvider, ChatMessage } from '../types/types';
+import { BotAction, LLMProvider, ChatMessage, ModelInfoProvider } from '../types/types';
 import { BotManager } from '../bot/BotManager';
 import { ActionExecutor } from '../bot/ActionExecutor';
 import { PerceptionManager } from '../bot/PerceptionManager';
 import { MemoryManager } from '../core/MemoryManager';
+import { SessionManager } from '../core/SessionManager';
 import { botActionSchema } from '../schemas/botAction';
 import { botPromptTemplate } from '../prompts/botPrompts';
 import { MetricsBatcher } from '../metrics/MetricsBatcher';
@@ -13,11 +14,11 @@ import { agentConfig } from '../config/settings';
 /**
  * Loop principal do agente: Percepção → Memória → Raciocínio → Ação → Registro.
  *
- * Diferenças da versão anterior:
- * - MemoryManager dá contexto temporal (o bot sabe o que fez recentemente)
- * - Prompts com chain-of-thought (campo "raciocinio")
- * - Métricas via batcher (sem I/O a cada ciclo)
- * - Provider genérico — não depende de prompt template interno
+ * Inclui:
+ * - SessionManager para rastrear sessões de experimento
+ * - Registro de eventos de parse JSON (válido/reparado/falho)
+ * - Registro de eventos de conexão
+ * - Propagação de sessionId para todas as métricas
  */
 export class AgentLoop {
   private botManager: BotManager;
@@ -26,14 +27,22 @@ export class AgentLoop {
   private perception: PerceptionManager | null = null;
   private memory: MemoryManager;
   private batcher: MetricsBatcher;
+  private sessionManager: SessionManager;
   private isRunning = false;
   private listenersAttached = false;
+  private modelInfoProvider?: ModelInfoProvider;
 
-  constructor(botManager: BotManager, provider: LLMProvider) {
+  constructor(
+    botManager: BotManager,
+    provider: LLMProvider,
+    modelInfoProvider?: ModelInfoProvider,
+  ) {
     this.botManager = botManager;
     this.provider = provider;
+    this.modelInfoProvider = modelInfoProvider;
     this.memory = new MemoryManager();
     this.batcher = MetricsBatcher.getInstance();
+    this.sessionManager = new SessionManager();
 
     this.botManager.setCallbacks(
       () => this.onConnected(),
@@ -41,17 +50,41 @@ export class AgentLoop {
     );
   }
 
-  start(): void {
+  async start(): Promise<void> {
     console.log('🧠 Agente ativado');
     console.log(`   Provider: ${this.provider.providerName} (${this.provider.modelName})`);
     this.isRunning = true;
     this.batcher.start();
+
+    // Aguarda userBotId estar disponível antes de criar sessão
+    await this.waitForUserBotId();
+
+    if (this.botManager.userBotId) {
+      await this.sessionManager.startSession({
+        provider: this.provider.providerName,
+        model: this.provider.modelName,
+        userBotId: this.botManager.userBotId,
+        mode: 'gameplay',
+        notes: process.env.SESSION_NOTES,
+        modelInfoProvider: this.modelInfoProvider,
+      });
+    }
+
     this.loop();
   }
 
   async stop(): Promise<void> {
     this.isRunning = false;
+    await this.sessionManager.endSession();
     await this.batcher.shutdown();
+  }
+
+  private async waitForUserBotId(): Promise<void> {
+    let attempts = 0;
+    while (!this.botManager.userBotId && attempts < 30) {
+      await sleep(500);
+      attempts++;
+    }
   }
 
   private async loop(): Promise<void> {
@@ -87,6 +120,7 @@ export class AgentLoop {
         // 5. MÉTRICA DE AÇÃO (enfileirada, sem I/O)
         this.batcher.pushActionMetric({
           userBotId: this.botManager.userBotId,
+          sessionId: this.sessionManager.getSessionId() ?? undefined,
           action: result.action,
           direction: result.direction,
           content: result.content,
@@ -121,12 +155,26 @@ export class AgentLoop {
         { role: 'user', content: humanMsg },
       ];
 
+      const sessionId = this.sessionManager.getSessionId() ?? undefined;
+
       const response = await this.provider.invoke(messages, {
         userBotId: this.botManager.userBotId,
+        sessionId,
         taskName: 'action_decision',
       });
 
-      const { data, error, repaired } = safeParseJSON(response.content);
+      const { data, error, repaired, status } = safeParseJSON(response.content);
+
+      // Registrar evento de parse no banco
+      this.batcher.pushParseEvent({
+        sessionId,
+        status,
+        rawResponse: response.content.slice(0, 2000),
+        errorMessage: error ?? undefined,
+      });
+
+      // Atualizar contadores da sessão
+      this.sessionManager.incrementCounter(status);
 
       if (!data || error) {
         console.warn(`⚠️  JSON inválido da LLM: ${error}`);
@@ -154,6 +202,12 @@ export class AgentLoop {
     this.executor = new ActionExecutor(bot);
     this.perception = new PerceptionManager(bot);
 
+    // Registrar evento de conexão
+    this.batcher.pushConnectionEvent({
+      sessionId: this.sessionManager.getSessionId() ?? undefined,
+      eventType: 'connected',
+    });
+
     if (!this.listenersAttached) {
       this.listenersAttached = true;
       this.memory.clear();
@@ -172,9 +226,19 @@ export class AgentLoop {
 
       bot.on('death', () => {
         this.memory.recordEvent('Morri! Respawnando...');
+        this.batcher.pushConnectionEvent({
+          sessionId: this.sessionManager.getSessionId() ?? undefined,
+          eventType: 'death',
+        });
+        this.sessionManager.incrementCounter('disconnect');
       });
     } else {
       this.memory.recordEvent('Respawnei');
+      this.batcher.pushConnectionEvent({
+        sessionId: this.sessionManager.getSessionId() ?? undefined,
+        eventType: 'reconnected',
+      });
+      this.sessionManager.incrementCounter('reconnect');
     }
   }
 
@@ -182,5 +246,11 @@ export class AgentLoop {
     this.executor = null;
     this.perception = null;
     this.listenersAttached = false;
+
+    this.batcher.pushConnectionEvent({
+      sessionId: this.sessionManager.getSessionId() ?? undefined,
+      eventType: 'disconnected',
+    });
+    this.sessionManager.incrementCounter('disconnect');
   }
 }

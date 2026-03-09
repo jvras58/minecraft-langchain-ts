@@ -1,0 +1,107 @@
+[
+  {
+    "id": "survival_low_hp_mob",
+    "name": "Vida baixa + mob hostil perto",
+    "context": "Vida: 4/20\nFome: 18/20\nPosição: x=100 y=64 z=200\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Zombie (3m, vida: 20)\nBlocos próximos: grass_block, stone\nHora: 18000 (noite)\nClima: limpo\nInventário: wooden_sword x1\nBioma: plains",
+    "memory": "[há 30s] Ação: ANDAR para frente (sucesso)\n[há 20s] Evento: Vida baixa: 4/20",
+    "expectedActions": ["FUGIR"]
+  },
+  {
+    "id": "survival_low_hp_safe",
+    "name": "Vida baixa + sem mobs",
+    "context": "Vida: 3/20\nFome: 15/20\nPosição: x=50 y=70 z=50\nAndando: não\nJogadores próximos: Steve (5m)\nEntidades próximas: nenhuma\nBlocos próximos: grass_block, oak_log, oak_leaves\nHora: 6000 (dia)\nClima: limpo\nInventário: apple x2, wooden_pickaxe x1\nBioma: forest",
+    "memory": "[há 30s] Evento: Vida baixa: 3/20",
+    "expectedActions": ["FALAR", "COLETAR"]
+  },
+  {
+    "id": "social_chat_response",
+    "name": "Jogador falou no chat",
+    "context": "Vida: 20/20\nFome: 20/20\nPosição: x=0 y=64 z=0\nAndando: não\nJogadores próximos: Alex (3m)\nEntidades próximas: nenhuma\nBlocos próximos: grass_block, stone\nHora: 8000 (dia)\nClima: limpo\nInventário: vazio\nBioma: plains",
+    "memory": "[há 5s] Interação: Alex disse: 'Olá, tudo bem?'",
+    "expectedActions": ["FALAR"]
+  },
+  {
+    "id": "social_player_nearby",
+    "name": "Jogador perto sem interação recente",
+    "context": "Vida: 18/20\nFome: 19/20\nPosição: x=30 y=64 z=30\nAndando: não\nJogadores próximos: Steve (8m)\nEntidades próximas: Cow (10m)\nBlocos próximos: grass_block, dirt\nHora: 10000 (dia)\nClima: limpo\nInventário: stone_pickaxe x1\nBioma: plains",
+    "memory": "[há 60s] Ação: EXPLORAR (sucesso)\n[há 45s] Ação: ANDAR para frente (sucesso)",
+    "expectedActions": ["SEGUIR", "OLHAR", "FALAR"]
+  },
+  {
+    "id": "explore_empty_inventory",
+    "name": "Sem jogadores + inventário vazio",
+    "context": "Vida: 20/20\nFome: 18/20\nPosição: x=200 y=64 z=200\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Chicken (12m)\nBlocos próximos: grass_block, oak_log, stone\nHora: 7000 (dia)\nClima: limpo\nInventário: vazio\nBioma: forest",
+    "memory": "[há 30s] Evento: Conectado ao servidor",
+    "expectedActions": ["COLETAR", "EXPLORAR"]
+  },
+  {
+    "id": "explore_interesting_blocks",
+    "name": "Blocos interessantes perto",
+    "context": "Vida: 20/20\nFome: 20/20\nPosição: x=100 y=30 z=100\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: nenhuma\nBlocos próximos: diamond_ore, stone, iron_ore, coal_ore\nHora: 12000 (dia)\nClima: limpo\nInventário: iron_pickaxe x1, torch x10\nBioma: caves",
+    "memory": "[há 20s] Ação: EXPLORAR (sucesso)\n[há 10s] Ação: ANDAR para frente (sucesso)",
+    "expectedActions": ["COLETAR"]
+  },
+  {
+    "id": "antiloop_walking",
+    "name": "Anti-loop: 3x ANDAR seguido",
+    "context": "Vida: 20/20\nFome: 17/20\nPosição: x=50 y=64 z=50\nAndando: sim\nJogadores próximos: nenhum\nEntidades próximas: Pig (15m)\nBlocos próximos: grass_block, dirt\nHora: 9000 (dia)\nClima: limpo\nInventário: stone_sword x1\nBioma: plains",
+    "memory": "[há 30s] Ação: ANDAR para frente (sucesso)\n[há 20s] Ação: ANDAR para frente (sucesso)\n[há 10s] Ação: ANDAR para frente (sucesso)\nContador: ANDAR=3",
+    "expectedActions": ["EXPLORAR", "COLETAR", "FALAR", "OLHAR", "PARAR", "PULAR"]
+  },
+  {
+    "id": "combat_hostile_close",
+    "name": "Mob hostil a 5m",
+    "context": "Vida: 16/20\nFome: 20/20\nPosição: x=80 y=64 z=80\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Skeleton (5m, vida: 20)\nBlocos próximos: grass_block, stone\nHora: 20000 (noite)\nClima: limpo\nInventário: iron_sword x1, shield x1\nBioma: plains",
+    "memory": "[há 15s] Ação: EXPLORAR (sucesso)",
+    "expectedActions": ["ATACAR", "FUGIR"]
+  },
+  {
+    "id": "idle_calm_full_inv",
+    "name": "Tudo calmo + inventário cheio",
+    "context": "Vida: 20/20\nFome: 20/20\nPosição: x=0 y=64 z=0\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: nenhuma\nBlocos próximos: grass_block, dirt, stone\nHora: 12000 (dia)\nClima: limpo\nInventário: cobblestone x64, dirt x64, oak_log x32, iron_ingot x10, diamond x3, bread x16\nBioma: plains",
+    "memory": "[há 30s] Ação: COLETAR (sucesso)\n[há 20s] Ação: COLETAR (sucesso)",
+    "expectedActions": ["EXPLORAR", "FALAR", "ANDAR"]
+  },
+  {
+    "id": "combat_multiple_mobs",
+    "name": "Múltiplos mobs hostis",
+    "context": "Vida: 12/20\nFome: 16/20\nPosição: x=150 y=40 z=150\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Zombie (4m, vida: 20), Zombie (6m, vida: 20), Spider (8m, vida: 16)\nBlocos próximos: stone, cobblestone, torch\nHora: 22000 (noite)\nClima: limpo\nInventário: stone_sword x1\nBioma: caves",
+    "memory": "[há 10s] Evento: Vida baixa: 12/20",
+    "expectedActions": ["FUGIR", "ATACAR"]
+  },
+  {
+    "id": "survival_hunger",
+    "name": "Fome muito baixa",
+    "context": "Vida: 15/20\nFome: 3/20\nPosição: x=60 y=64 z=60\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Cow (7m), Pig (10m)\nBlocos próximos: grass_block, wheat\nHora: 14000 (dia)\nClima: limpo\nInventário: stone_sword x1, wooden_axe x1\nBioma: plains",
+    "memory": "[há 20s] Ação: EXPLORAR (sucesso)",
+    "expectedActions": ["COLETAR", "ATACAR"]
+  },
+  {
+    "id": "social_multiple_players",
+    "name": "Múltiplos jogadores perto",
+    "context": "Vida: 20/20\nFome: 20/20\nPosição: x=0 y=64 z=0\nAndando: não\nJogadores próximos: Alex (3m), Steve (5m), Bob (7m)\nEntidades próximas: nenhuma\nBlocos próximos: stone_bricks, glass, oak_planks\nHora: 10000 (dia)\nClima: limpo\nInventário: bread x5\nBioma: plains",
+    "memory": "[há 10s] Interação: Alex disse: 'Vem com a gente explorar!'\n[há 5s] Interação: Steve disse: 'Bora!'",
+    "expectedActions": ["FALAR", "SEGUIR"]
+  },
+  {
+    "id": "explore_night_safe",
+    "name": "Noite sem mobs perto",
+    "context": "Vida: 20/20\nFome: 18/20\nPosição: x=100 y=64 z=100\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: nenhuma\nBlocos próximos: grass_block, oak_log, torch\nHora: 19000 (noite)\nClima: limpo\nInventário: wooden_pickaxe x1, torch x20\nBioma: forest",
+    "memory": "[há 30s] Ação: PARAR (sucesso)",
+    "expectedActions": ["EXPLORAR", "COLETAR", "ANDAR"]
+  },
+  {
+    "id": "survival_creeper",
+    "name": "Creeper muito perto",
+    "context": "Vida: 20/20\nFome: 20/20\nPosição: x=75 y=64 z=75\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Creeper (3m, vida: 20)\nBlocos próximos: grass_block, stone\nHora: 21000 (noite)\nClima: limpo\nInventário: iron_sword x1\nBioma: plains",
+    "memory": "[há 5s] Ação: EXPLORAR (sucesso)",
+    "expectedActions": ["FUGIR"]
+  },
+  {
+    "id": "explore_rain",
+    "name": "Chuva + exploração",
+    "context": "Vida: 18/20\nFome: 16/20\nPosição: x=120 y=70 z=120\nAndando: não\nJogadores próximos: nenhum\nEntidades próximas: Sheep (12m)\nBlocos próximos: grass_block, sand, water\nHora: 11000 (dia)\nClima: chuva\nInventário: wooden_pickaxe x1, dirt x10\nBioma: beach",
+    "memory": "[há 20s] Ação: ANDAR para frente (sucesso)",
+    "expectedActions": ["EXPLORAR", "COLETAR", "ANDAR"]
+  }
+]

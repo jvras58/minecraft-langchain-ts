@@ -5,12 +5,16 @@ import {
   LLMResponse,
 } from '../types/types';
 import { MetricsBatcher } from '../metrics/MetricsBatcher';
+import { HardwareMonitor } from '../metrics/HardwareMonitor';
+import { countTokens, countMessagesTokens } from '../utils/tokenCounter';
 
 /**
  * Classe base para provedores de LLM.
  *
  * Responsabilidades:
  * - Medir tempo de resposta automaticamente
+ * - Contar tokens localmente (consistente entre providers)
+ * - Capturar hardware antes/depois da inferência
  * - Enfileirar métricas via MetricsBatcher (sem I/O síncrono)
  * - Fornecer interface uniforme para qualquer provider
  *
@@ -34,11 +38,28 @@ export abstract class BaseLLMProvider implements LLMProvider {
     messages: ChatMessage[],
     options?: InvokeOptions,
   ): Promise<LLMResponse> {
+    // Contagem local de tokens de entrada (independente do provider)
+    const localInputTokens = countMessagesTokens(messages);
+
+    // Snapshot de hardware antes da inferência
+    const hardwareBefore = await HardwareMonitor.getInstance().getDynamicSnapshot();
+
     const start = performance.now();
-
     const result = await this.callModel(messages, options);
-
     const responseTimeMs = performance.now() - start;
+
+    // Snapshot de hardware depois da inferência
+    const hardwareAfter = await HardwareMonitor.getInstance().getDynamicSnapshot();
+
+    // Contagem local de tokens de saída
+    const localOutputTokens = countTokens(result.content);
+
+    // Tokens por segundo (baseado na contagem local)
+    const tokensPerSecond = responseTimeMs > 0
+      ? localOutputTokens / (responseTimeMs / 1000)
+      : undefined;
+
+    const totalTokens = localInputTokens + localOutputTokens;
 
     // Enfileira métrica sem bloquear (fire-and-forget)
     if (options?.userBotId) {
@@ -48,9 +69,16 @@ export abstract class BaseLLMProvider implements LLMProvider {
           model: this.modelName,
           inputTokens: result.inputTokens,
           outputTokens: result.outputTokens,
+          localInputTokens,
+          localOutputTokens,
+          tokensPerSecond,
+          totalTokens,
           responseTimeMs,
           userBotId: options.userBotId,
+          sessionId: options.sessionId,
           taskName: options.taskName,
+          hardwareBefore,
+          hardwareAfter,
         })
         .catch((err) => console.error('Erro ao enfileirar métrica LLM:', err));
     }

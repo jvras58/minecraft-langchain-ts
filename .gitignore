@@ -24,3 +24,6 @@ ServidorMinecraft/*
 # files created by Prisma
 dev.db
 dev.db-journal
+
+# Exported metrics
+exports/

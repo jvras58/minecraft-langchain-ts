@@ -11,50 +11,132 @@ datasource db {
 }
 
 model UserBot {
-  id            String         @id @default(cuid())
-  name          String         @unique
+  id            String              @id @default(cuid())
+  name          String              @unique
   metrics       Metric[]
   actionMetrics ActionMetric[]
+  sessions      ExperimentSession[]
+}
+
+model ExperimentSession {
+  id                  String    @id @default(cuid())
+  startedAt           DateTime  @default(now())
+  endedAt             DateTime?
+
+  // Modelo
+  provider            String
+  model               String
+  quantization        String?
+  modelFamily         String?
+  parameterSize       String?
+  modelSizeBytes      BigInt?
+  vramAllocatedBytes  BigInt?
+  contextLength       Int?
+
+  // Hardware (snapshot estático, 1x)
+  hardwareProfile     Json
+
+  // Modo
+  mode                String   @default("gameplay") // "gameplay" | "benchmark"
+
+  // Contadores
+  totalCycles         Int      @default(0)
+  validJsonCount      Int      @default(0)
+  repairedJsonCount   Int      @default(0)
+  failedJsonCount     Int      @default(0)
+  disconnections      Int      @default(0)
+  reconnections       Int      @default(0)
+
+  // Anotações
+  notes               String?  @db.Text
+
+  // Relações
+  userBotId           String
+  userBot             UserBot  @relation(fields: [userBotId], references: [id])
+  metrics             Metric[]
+  actionMetrics       ActionMetric[]
+  parseEvents         ParseEvent[]
+  connectionEvents    ConnectionEvent[]
+
+  @@index([provider, model])
+  @@index([startedAt])
 }
 
 model Metric {
-  id           String   @id @default(cuid())
-  userBotId    String
-  timestamp    DateTime @default(now())
-  provider     String
-  model        String
-  inputTokens  Int?
-  outputTokens Int?
-  responseTime Float
+  id                String   @id @default(cuid())
+  userBotId         String
+  sessionId         String?
+  timestamp         DateTime @default(now())
+  provider          String
+  model             String
+  inputTokens       Int?
+  outputTokens      Int?
+  localInputTokens  Int?
+  localOutputTokens Int?
+  tokensPerSecond   Float?
+  totalTokens       Int?
+  responseTime      Float
 
-  gpuName  String?
-  cpuName  String?
-  os       String?
-  taskName String?
+  gpuName           String?
+  cpuName           String?
+  os                String?
+  taskName          String?
 
-  environment Json
+  environment       Json
+  environmentBefore Json?
+  environmentAfter  Json?
 
-  userBot UserBot @relation(fields: [userBotId], references: [id])
+  userBot           UserBot            @relation(fields: [userBotId], references: [id])
+  session           ExperimentSession? @relation(fields: [sessionId], references: [id])
 
   @@index([userBotId, timestamp])
+  @@index([sessionId])
   @@index([provider])
   @@index([taskName])
 }
 
 model ActionMetric {
-  id        String   @id @default(cuid())
-  userBotId String
-  timestamp DateTime @default(now())
-  action    String
-  direction String?
-  content   String?  @db.Text
+  id              String   @id @default(cuid())
+  userBotId       String
+  sessionId       String?
+  timestamp       DateTime @default(now())
+  action          String
+  direction       String?
+  content         String?  @db.Text
 
   success         Boolean
-  errorMessage    String? @db.Text
+  errorMessage    String?  @db.Text
   executionTimeMs Float
 
-  userBot UserBot @relation(fields: [userBotId], references: [id])
+  userBot         UserBot            @relation(fields: [userBotId], references: [id])
+  session         ExperimentSession? @relation(fields: [sessionId], references: [id])
 
   @@index([userBotId, timestamp])
+  @@index([sessionId])
   @@index([userBotId, action])
+}
+
+model ParseEvent {
+  id           String   @id @default(cuid())
+  sessionId    String?
+  timestamp    DateTime @default(now())
+  status       String   // "valid" | "repaired" | "failed"
+  rawResponse  String?  @db.Text
+  errorMessage String?  @db.Text
+
+  session      ExperimentSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, status])
+}
+
+model ConnectionEvent {
+  id          String   @id @default(cuid())
+  sessionId   String?
+  timestamp   DateTime @default(now())
+  eventType   String   // "connected" | "disconnected" | "reconnected" | "kicked" | "death"
+  reason      String?  @db.Text
+
+  session     ExperimentSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, eventType])
 }

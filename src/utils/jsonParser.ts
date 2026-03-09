@@ -17,12 +17,20 @@ import { jsonrepair } from 'jsonrepair';
  * 3. Se falhar, usa jsonrepair para consertar
  * 4. Se tudo falhar, retorna null com o erro
  */
-export function safeParseJSON<T = unknown>(raw: string): { data: T | null; error: string | null; repaired: boolean } {
+export interface ParseResult<T = unknown> {
+  data: T | null;
+  error: string | null;
+  repaired: boolean;
+  status: 'valid' | 'repaired' | 'failed';
+  rawInput: string;
+}
+
+export function safeParseJSON<T = unknown>(raw: string): ParseResult<T> {
   const cleaned = extractJSON(raw);
 
   // Tenta parse direto — rápido quando o JSON já está correto
   try {
-    return { data: JSON.parse(cleaned) as T, error: null, repaired: false };
+    return { data: JSON.parse(cleaned) as T, error: null, repaired: false, status: 'valid', rawInput: raw };
   } catch {
     // Segue para reparo
   }
@@ -30,10 +38,10 @@ export function safeParseJSON<T = unknown>(raw: string): { data: T | null; error
   // Usa jsonrepair para consertar JSON malformado
   try {
     const repaired = jsonrepair(cleaned);
-    return { data: JSON.parse(repaired) as T, error: null, repaired: true };
+    return { data: JSON.parse(repaired) as T, error: null, repaired: true, status: 'repaired', rawInput: raw };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { data: null, error: `Falha ao parsear JSON mesmo com reparo: ${msg}`, repaired: false };
+    return { data: null, error: `Falha ao parsear JSON mesmo com reparo: ${msg}`, repaired: false, status: 'failed', rawInput: raw };
   }
 }
 

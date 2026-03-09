@@ -8,11 +8,20 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
+    "benchmark": "tsx src/benchmark/index.ts",
+    "metrics:export": "tsx src/scripts/exportMetrics.ts",
+    "metrics:summary": "tsx src/scripts/exportMetrics.ts --summary-only",
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio"
   },
-  "keywords": ["minecraft", "bot", "ai", "langchain", "autonomous-agent"],
+  "keywords": [
+    "minecraft",
+    "bot",
+    "ai",
+    "langchain",
+    "autonomous-agent"
+  ],
   "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.3.0",
@@ -20,8 +29,9 @@
     "@langchain/ollama": "^1.1.0",
     "@prisma/client": "^6.19.0",
     "dotenv": "^17.2.3",
-    "mineflayer": "^4.20.1",
+    "gpt-tokenizer": "^3.4.0",
     "jsonrepair": "^3.11.3",
+    "mineflayer": "^4.20.1",
     "prisma": "^6.19.0",
     "systeminformation": "^5.27.14",
     "zod": "^4.1.13"
