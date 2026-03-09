@@ -90,7 +90,7 @@ graph TD
 
     subgraph BotManager
         BM1[createBot] --> BM2[mineflayer.createBot]
-        BM2 --> BM3[setupEventHandlers]
+        BM2 --> BM3[setupEvents]
         BM3 --> BM4["bot.on('spawn')"]
         BM3 --> BM5["bot.on('chat')"]
         BM3 --> BM6["bot.on('death')"]
