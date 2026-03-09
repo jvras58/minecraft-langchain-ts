@@ -74,8 +74,13 @@ export class HardwareMonitor {
         memory: { total: mem.total },
         gpu: gpu.controllers.map((g) => ({ model: g.model, vendor: g.vendor, vram: g.vram })),
       };
-      this.staticInfoPromise = null;
       return this.staticInfo;
+    }).catch((err) => {
+      this.staticInfoPromise = null;
+      throw err;
+    }).then((info) => {
+      this.staticInfoPromise = null;
+      return info;
     });
 
     return this.staticInfoPromise;
@@ -102,8 +107,13 @@ export class HardwareMonitor {
         gpuTemp: primary?.temperatureGpu ?? null,
       };
       this.lastDynamicTime = performance.now();
-      this.dynamicInfoPromise = null;
       return this.dynamicInfo;
+    }).catch((err) => {
+      this.dynamicInfoPromise = null;
+      throw err;
+    }).then((info) => {
+      this.dynamicInfoPromise = null;
+      return info;
     });
 
     return this.dynamicInfoPromise;
