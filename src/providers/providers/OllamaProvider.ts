@@ -1,50 +1,41 @@
 import { ChatOllama } from '@langchain/ollama';
-import { BaseLLMProvider } from '../LLMProvider';
-import { PromptTemplate } from '../../types/types';
-import { MetricsCallbackHandler } from '../../utils/MetricsCallbackHandler';
+import { BaseLLMProvider } from '../BaseLLMProvider';
+import { ChatMessage, InvokeOptions } from '../../types/types';
 
 export class OllamaProvider extends BaseLLMProvider {
+  readonly providerName = 'Ollama';
+  readonly modelName: string;
   private llm: ChatOllama;
-  private promptTemplate: PromptTemplate;
-  private modelName: string;
 
-  constructor(modelName: string, promptTemplate: PromptTemplate) {
+  constructor(model: string, baseUrl?: string) {
     super();
-    this.modelName = modelName;
+    this.modelName = model;
     this.llm = new ChatOllama({
-      model: modelName,
+      model,
       temperature: 0.8,
+      baseUrl: baseUrl || 'http://localhost:11434',
     });
-    this.promptTemplate = promptTemplate;
   }
 
-  async invoke(
-    variables: Record<string, any>,
-    userBotId: string,
-    taskName?: string
-  ): Promise<string> {
-    const humanMessage = this.promptTemplate.human
-      .replace('{contexto}', variables.contexto || '')
-      .replace('{ultimaAcao}', variables.ultimaAcao || '')
-      .replace('{contadorAcoes}', variables.contadorAcoes || '');
+  protected async callModel(
+    messages: ChatMessage[],
+    _options?: InvokeOptions,
+  ) {
+    const result = await this.llm.invoke(
+      messages.map((m) => ({ role: m.role as any, content: m.content })),
+    );
 
-    const messages = [
-      { role: 'system', content: this.promptTemplate.system },
-      { role: 'user', content: humanMessage }
-    ];
+    // Ollama pode colocar tokens em response_metadata ou llmOutput
+    const meta = (result as any).response_metadata ?? {};
+    const inputTokens =
+      meta.prompt_eval_count ?? meta.prompt_tokens ?? meta.input_tokens;
+    const outputTokens =
+      meta.eval_count ?? meta.completion_tokens ?? meta.output_tokens;
 
-    // Callback para métricas automáticas
-    const metricsCallback = new MetricsCallbackHandler({
-      provider: 'Ollama',
-      model: this.modelName,
-      userBotId,
-      taskName,
-    });
-
-    const result = await this.llm.invoke(messages, {
-      callbacks: [metricsCallback],
-    });
-
-    return result.content as string;
+    return {
+      content: result.content as string,
+      inputTokens,
+      outputTokens,
+    };
   }
 }

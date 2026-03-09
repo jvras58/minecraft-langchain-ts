@@ -2,6 +2,7 @@ import { Bot, ControlState } from 'mineflayer';
 
 export class MovementManager {
   private bot: Bot;
+  private moveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(bot: Bot) {
     this.bot = bot;
@@ -10,46 +11,80 @@ export class MovementManager {
   andarNaDirecao(direcao: string): void {
     this.pararMovimento();
 
-    switch (direcao) {
-      case 'frente':
-        this.bot.setControlState('forward', true);
-        break;
-      case 'tras':
-        this.bot.setControlState('back', true);
-        break;
-      case 'esquerda':
-        this.bot.setControlState('left', true);
-        break;
-      case 'direita':
-        this.bot.setControlState('right', true);
-        break;
-      case 'aleatorio':
-        const direcoes: ControlState[] = ['forward', 'back', 'left', 'right'];
-        const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
-        this.bot.setControlState(dir, true);
-        break;
+    const map: Record<string, ControlState> = {
+      frente: 'forward',
+      tras: 'back',
+      esquerda: 'left',
+      direita: 'right',
+    };
+
+    if (direcao === 'aleatorio') {
+      const dirs: ControlState[] = ['forward', 'back', 'left', 'right'];
+      this.bot.setControlState(dirs[Math.floor(Math.random() * dirs.length)], true);
+    } else {
+      const ctrl = map[direcao];
+      if (ctrl) this.bot.setControlState(ctrl, true);
     }
 
-    const tempo = 2000 + Math.random() * 2000;
-    setTimeout(() => this.pararMovimento(), tempo);
+    this.autoStop(2000 + Math.random() * 2000);
   }
 
   explorarAleatorio(): void {
     this.pararMovimento();
 
-    const direcoes: ControlState[] = ['forward', 'back', 'left', 'right'];
-    const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
+    const dirs: ControlState[] = ['forward', 'back', 'left', 'right'];
+    this.bot.setControlState(dirs[Math.floor(Math.random() * dirs.length)], true);
+    this.bot.look(Math.random() * Math.PI * 2, 0);
 
-    this.bot.setControlState(dir, true);
+    this.autoStop(3000 + Math.random() * 3000);
+  }
 
-    const yaw = Math.random() * Math.PI * 2;
-    this.bot.look(yaw, 0);
+  /** Olha na direção de uma entidade e anda até ela. */
+  seguirJogador(nome: string): void {
+    this.pararMovimento();
 
-    const tempo = 3000 + Math.random() * 3000;
-    setTimeout(() => this.pararMovimento(), tempo);
+    const player = this.bot.players[nome];
+    if (!player?.entity) {
+      throw new Error(`Jogador ${nome} não encontrado ou fora do alcance`);
+    }
+
+    this.bot.lookAt(player.entity.position.offset(0, 1.6, 0));
+    this.bot.setControlState('forward', true);
+    this.bot.setControlState('sprint', true);
+
+    this.autoStop(3000);
+  }
+
+  /** Vira 180° e corre na direção oposta à entidade. */
+  fugirDeEntidade(nome: string): void {
+    this.pararMovimento();
+
+    const entity = Object.values(this.bot.entities).find(
+      (e) =>
+        e.username === nome ||
+        e.displayName === nome ||
+        `entity_${e.id}` === nome,
+    );
+
+    if (entity) {
+      // Calcula ângulo oposto
+      const dx = this.bot.entity.position.x - entity.position.x;
+      const dz = this.bot.entity.position.z - entity.position.z;
+      const yaw = Math.atan2(-dx, dz);
+      this.bot.look(yaw, 0);
+    }
+
+    this.bot.setControlState('forward', true);
+    this.bot.setControlState('sprint', true);
+
+    this.autoStop(4000);
   }
 
   pararMovimento(): void {
+    if (this.moveTimeout) {
+      clearTimeout(this.moveTimeout);
+      this.moveTimeout = null;
+    }
     this.bot.setControlState('forward', false);
     this.bot.setControlState('back', false);
     this.bot.setControlState('left', false);
@@ -59,11 +94,11 @@ export class MovementManager {
 
   async pular(): Promise<void> {
     this.bot.setControlState('jump', true);
-    await this.sleep(100);
+    await new Promise((r) => setTimeout(r, 100));
     this.bot.setControlState('jump', false);
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private autoStop(ms: number): void {
+    this.moveTimeout = setTimeout(() => this.pararMovimento(), ms);
   }
 }

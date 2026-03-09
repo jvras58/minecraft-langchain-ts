@@ -6,13 +6,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model UserBot {
   id            String         @id @default(cuid())
-  name          String?
+  name          String         @unique
   metrics       Metric[]
   actionMetrics ActionMetric[]
 }
@@ -27,13 +27,12 @@ model Metric {
   outputTokens Int?
   responseTime Float
 
-  gpuName String?
-  cpuName String?
-  os      String?
-
+  gpuName  String?
+  cpuName  String?
+  os       String?
   taskName String?
 
-  environment String
+  environment Json
 
   userBot UserBot @relation(fields: [userBotId], references: [id])
 
@@ -48,11 +47,11 @@ model ActionMetric {
   timestamp DateTime @default(now())
   action    String
   direction String?
-  content   String?
+  content   String?  @db.Text
 
-  success       Boolean
-  errorMessage  String?
-  executionTime Float
+  success         Boolean
+  errorMessage    String? @db.Text
+  executionTimeMs Float
 
   userBot UserBot @relation(fields: [userBotId], references: [id])
 
