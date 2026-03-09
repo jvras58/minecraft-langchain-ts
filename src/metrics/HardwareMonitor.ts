@@ -29,6 +29,8 @@ export class HardwareMonitor {
   private staticInfo: StaticInfo | null = null;
   private dynamicInfo: DynamicInfo | null = null;
   private lastDynamicTime = 0;
+  private staticInfoPromise: Promise<StaticInfo> | null = null;
+  private dynamicInfoPromise: Promise<DynamicInfo> | null = null;
 
   static getInstance(): HardwareMonitor {
     if (!HardwareMonitor.instance) {
@@ -54,51 +56,56 @@ export class HardwareMonitor {
     };
   }
 
-  private async getStatic(): Promise<StaticInfo> {
-    if (this.staticInfo) return this.staticInfo;
+  private getStatic(): Promise<StaticInfo> {
+    if (this.staticInfo) return Promise.resolve(this.staticInfo);
+    if (this.staticInfoPromise) return this.staticInfoPromise;
 
-    const [cpu, mem, gpu] = await Promise.all([
+    this.staticInfoPromise = Promise.all([
       si.cpu(),
       si.mem(),
       si.graphics(),
-    ]);
+    ]).then(([cpu, mem, gpu]) => {
+      const cpuName = [cpu.manufacturer, cpu.brand].filter(Boolean).join(' ').trim();
+      this.staticInfo = {
+        cpuName,
+        gpuName: gpu.controllers[0]?.model ?? null,
+        os: process.platform,
+        cpu: { manufacturer: cpu.manufacturer, brand: cpu.brand, cores: cpu.cores, speed: cpu.speed },
+        memory: { total: mem.total },
+        gpu: gpu.controllers.map((g) => ({ model: g.model, vendor: g.vendor, vram: g.vram })),
+      };
+      this.staticInfoPromise = null;
+      return this.staticInfo;
+    });
 
-    const cpuName = [cpu.manufacturer, cpu.brand].filter(Boolean).join(' ').trim();
-
-    this.staticInfo = {
-      cpuName,
-      gpuName: gpu.controllers[0]?.model ?? null,
-      os: process.platform,
-      cpu: { manufacturer: cpu.manufacturer, brand: cpu.brand, cores: cpu.cores, speed: cpu.speed },
-      memory: { total: mem.total },
-      gpu: gpu.controllers.map((g) => ({ model: g.model, vendor: g.vendor, vram: g.vram })),
-    };
-
-    return this.staticInfo;
+    return this.staticInfoPromise;
   }
 
-  private async getDynamic(): Promise<DynamicInfo> {
+  private getDynamic(): Promise<DynamicInfo> {
     const now = performance.now();
     if (this.dynamicInfo && now - this.lastDynamicTime < metricsConfig.hardwarePollIntervalMs) {
-      return this.dynamicInfo;
+      return Promise.resolve(this.dynamicInfo);
     }
+    if (this.dynamicInfoPromise) return this.dynamicInfoPromise;
 
-    const [load, mem, gpu] = await Promise.all([
+    this.dynamicInfoPromise = Promise.all([
       si.currentLoad(),
       si.mem(),
       si.graphics(),
-    ]);
+    ]).then(([load, mem, gpu]) => {
+      const primary = gpu.controllers[0];
+      this.dynamicInfo = {
+        cpuUsage: load.currentLoad,
+        ramUsed: mem.active,
+        ramFree: mem.free,
+        gpuUsage: primary?.utilizationGpu ?? null,
+        gpuTemp: primary?.temperatureGpu ?? null,
+      };
+      this.lastDynamicTime = performance.now();
+      this.dynamicInfoPromise = null;
+      return this.dynamicInfo;
+    });
 
-    const primary = gpu.controllers[0];
-    this.dynamicInfo = {
-      cpuUsage: load.currentLoad,
-      ramUsed: mem.active,
-      ramFree: mem.free,
-      gpuUsage: primary?.utilizationGpu ?? null,
-      gpuTemp: primary?.temperatureGpu ?? null,
-    };
-    this.lastDynamicTime = now;
-
-    return this.dynamicInfo;
+    return this.dynamicInfoPromise;
   }
 }
