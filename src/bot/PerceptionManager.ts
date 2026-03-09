@@ -7,6 +7,12 @@ import {
 } from '../types/types';
 import { agentConfig } from '../config/settings';
 
+/** Blocos sem interesse para a IA */
+const BORING_BLOCKS = new Set([
+  'air', 'cave_air', 'void_air', 'stone', 'dirt', 'grass_block',
+  'bedrock', 'deepslate', 'water', 'lava',
+]);
+
 /**
  * Coleta dados ricos do ambiente para alimentar a IA.
  *
@@ -122,51 +128,31 @@ export class PerceptionManager {
   }
 
   private getNearbyBlocks(): BlockInfo[] {
-    const blocks: BlockInfo[] = [];
     const botPos = this.bot.entity.position;
     const r = agentConfig.perceptionBlockRadius;
 
-    // Apenas blocos "interessantes" (não ar, não stone genérica)
-    const boring = new Set([
-      'air', 'cave_air', 'void_air', 'stone', 'dirt', 'grass_block',
-      'bedrock', 'deepslate', 'water', 'lava',
-    ]);
+    const positions = this.bot.findBlocks({
+      matching: (block) => block != null && !BORING_BLOCKS.has(block.name),
+      maxDistance: r,
+      count: 30,
+    });
 
-    for (let dx = -r; dx <= r; dx += 2) {
-      for (let dy = -3; dy <= 3; dy += 1) {
-        for (let dz = -r; dz <= r; dz += 2) {
-          try {
-            const block = this.bot.blockAt(
-              botPos.offset(dx, dy, dz),
-            );
-            if (!block || boring.has(block.name)) continue;
+    const seen = new Set<string>();
+    const result: BlockInfo[] = [];
 
-            const dist = botPos.distanceTo(block.position);
-            blocks.push({
-              nome: block.name,
-              posicao: {
-                x: block.position.x,
-                y: block.position.y,
-                z: block.position.z,
-              },
-              distancia: dist,
-            });
-          } catch {
-            // Block fora do mundo carregado
-          }
-        }
-      }
+    for (const pos of positions) {
+      const block = this.bot.blockAt(pos);
+      if (!block || seen.has(block.name)) continue;
+      seen.add(block.name);
+      result.push({
+        nome: block.name,
+        posicao: { x: pos.x, y: pos.y, z: pos.z },
+        distancia: botPos.distanceTo(pos),
+      });
+      if (result.length >= 10) break;
     }
 
-    // Deduplica por nome, mantém o mais próximo
-    const uniqueMap = new Map<string, BlockInfo>();
-    for (const b of blocks.sort((a, c) => a.distancia - c.distancia)) {
-      if (!uniqueMap.has(b.nome)) {
-        uniqueMap.set(b.nome, b);
-      }
-    }
-
-    return Array.from(uniqueMap.values()).slice(0, 10);
+    return result;
   }
 
   private getInventory(): InventoryItem[] {
