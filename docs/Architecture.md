@@ -154,7 +154,7 @@ classDiagram
         +createBot()
         +isConnected(): boolean
         +setCallbacks(onConnect, onDisconnect)
-        -setupEventHandlers()
+        -setupEvents()
     }
     class ActionExecutor {
         +executar(decisao: BotAction): ActionResult
