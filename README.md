@@ -232,7 +232,7 @@ Métricas são acumuladas em memória e gravadas em lote (transação única) pa
 pnpm db:studio   # abre Prisma Studio no browser para visualizar os dados
 ```
 
-Veja [prisma/implementação.md](prisma/implementação.md) para detalhes do sistema de métricas.
+Veja [prisma/implementacao.md](prisma/implementacao.md) para detalhes do sistema de métricas.
 
 ## 🐛 Solução de Problemas
 
