@@ -29,6 +29,7 @@ export class MetricsBatcher {
   private actionQueue: QueuedActionMetric[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private isFlushing = false;
+  private pendingFlush = false;
 
   static getInstance(): MetricsBatcher {
     if (!MetricsBatcher.instance) {
@@ -76,7 +77,10 @@ export class MetricsBatcher {
 
   /** Grava tudo no banco em uma única transação. */
   async flush(): Promise<void> {
-    if (this.isFlushing) return;
+    if (this.isFlushing) {
+      this.pendingFlush = true;
+      return;
+    }
     if (this.llmQueue.length === 0 && this.actionQueue.length === 0) return;
 
     this.isFlushing = true;
@@ -135,6 +139,10 @@ export class MetricsBatcher {
       this.actionQueue.unshift(...actionBatch);
     } finally {
       this.isFlushing = false;
+      if (this.pendingFlush) {
+        this.pendingFlush = false;
+        void this.flush();
+      }
     }
   }
 
