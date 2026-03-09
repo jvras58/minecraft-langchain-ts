@@ -31,10 +31,18 @@ export class ActionExecutor {
           console.log(`🗣️  Falei: ${decisao.conteudo}`);
           break;
 
-        case 'ANDAR':
-          this.movement.andarNaDirecao(decisao.direcao || 'frente');
-          console.log(`🚶 Andando para ${decisao.direcao || 'frente'}`);
-          break;
+        case 'ANDAR': {
+          const dir = decisao.direcao || 'frente';
+          this.movement.andarNaDirecao(dir);
+          console.log(`🚶 Andando para ${dir}`);
+          return {
+            success: true,
+            action: decisao.acao,
+            direction: dir,
+            content: decisao.conteudo,
+            executionTimeMs: performance.now() - start,
+          };
+        }
 
         case 'EXPLORAR':
           this.movement.explorarAleatorio();
@@ -145,7 +153,7 @@ export class ActionExecutor {
       }
     }
 
-    console.log(`⚠️  Nenhum bloco ${alvo || ''} encontrado para coletar`);
+    throw new Error(`Nenhum bloco ${alvo || ''} encontrado para coletar`);
   }
 
   private async atacarEntidade(alvo?: string): Promise<void> {
@@ -160,7 +168,7 @@ export class ActionExecutor {
       this.bot.attack(entity);
       console.log(`⚔️  Ataquei ${entity.username || entity.displayName || 'entidade'}`);
     } else {
-      console.log(`⚠️  Nenhuma entidade ${alvo || ''} para atacar`);
+      throw new Error(`Nenhuma entidade ${alvo || ''} encontrada para atacar`);
     }
   }
 }

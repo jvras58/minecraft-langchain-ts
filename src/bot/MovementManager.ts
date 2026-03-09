@@ -45,8 +45,7 @@ export class MovementManager {
 
     const player = this.bot.players[nome];
     if (!player?.entity) {
-      console.log(`⚠️ Jogador ${nome} não encontrado`);
-      return;
+      throw new Error(`Jogador ${nome} não encontrado ou fora do alcance`);
     }
 
     this.bot.lookAt(player.entity.position.offset(0, 1.6, 0));
