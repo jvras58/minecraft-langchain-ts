@@ -2,6 +2,8 @@
 
 Bot inteligente para Minecraft com arquitetura modular, memória de curto prazo e sistema de métricas eficiente. Usa LangChain com provedores de IA intercambiáveis (Groq, Ollama, etc.) para tomar decisões autônomas no jogo.
 
+Inclui uma **plataforma de benchmark reproduzível** para avaliar modelos locais em diferentes hardwares — com contagem de tokens independente, sessões de experimento, cenários fixos e exportação de dados para análise.
+
 ## 🚀 Recursos
 
 - ✅ **100% Node.js/TypeScript** — Código moderno e type-safe
@@ -14,6 +16,10 @@ Bot inteligente para Minecraft com arquitetura modular, memória de curto prazo 
 - 🔧 **JSON resiliente** — `jsonrepair` corrige saídas quebradas de modelos locais
 - 🔄 **Reconexão automática** — Se cair, reconecta sozinho
 - 🎮 **Novas ações** — SEGUIR, FUGIR, COLETAR, ATACAR
+- 🎯 **Modo Benchmark** — Cenários fixos para comparar modelos sem servidor Minecraft
+- 🔢 **Tokenizer local** — Contagem de tokens consistente entre providers (`gpt-tokenizer`)
+- 📋 **Sessões de experimento** — Cada execução agrupa métricas, contadores e metadados
+- 📤 **Exportação CSV/JSON** — Pipeline pronto para pandas/matplotlib/paper
 
 ## 📋 Pré-requisitos
 
@@ -65,6 +71,12 @@ MINECRAFT_HOST=localhost
 MINECRAFT_PORT=25565
 BOT_USERNAME=AgenteBot
 BOT_AUTH=offline
+
+# Benchmark (opcional)
+SESSION_NOTES="Meu setup de hardware"
+BENCHMARK_MODE=false
+BENCHMARK_REPS=10
+WARMUP_ROUNDS=3
 ```
 
 ### 4. Setup do banco (obrigatório no primeiro uso)
@@ -89,22 +101,28 @@ pnpm start     # executa o build
 
 ```
 src/
+├── benchmark/                   # Plataforma de benchmark
+│   ├── BenchmarkRunner.ts       # Executa cenários fixos com métricas
+│   ├── WarmupRunner.ts          # Warm-up para eliminar cold start
+│   ├── scenarios.json           # 15 cenários padronizados
+│   └── index.ts                 # Entry point: pnpm benchmark
 ├── bot/                         # Camada Minecraft
 │   ├── ActionExecutor.ts        # Executa ações (FALAR, ANDAR, SEGUIR, FUGIR, COLETAR, ATACAR...)
 │   ├── BotManager.ts            # Conexão e eventos do bot
 │   ├── MovementManager.ts       # Controle de movimento (follow, flee, explorar)
 │   └── PerceptionManager.ts     # Percepção rica (inventário, blocos, entidades, bioma)
 ├── config/
-│   └── settings.ts              # Configurações centralizadas (bot, LLM, métricas, agente)
+│   └── settings.ts              # Configurações centralizadas (bot, LLM, métricas, agente, benchmark)
 ├── core/                        # Lógica principal
 │   ├── AgentLoop.ts             # Loop: Percepção → Memória → Raciocínio → Ação
-│   └── MemoryManager.ts         # Memória de curto prazo (ring buffer)
+│   ├── MemoryManager.ts         # Memória de curto prazo (ring buffer)
+│   └── SessionManager.ts        # Gerencia sessões de experimento
 ├── metrics/                     # Sistema de métricas
-│   ├── MetricsBatcher.ts        # Fila em memória com flush em lote
-│   └── HardwareMonitor.ts       # Snapshot de hardware com cache agressivo
+│   ├── MetricsBatcher.ts        # Fila em memória com flush em lote (LLM, ação, parse, conexão)
+│   └── HardwareMonitor.ts       # Snapshot estático + dinâmico de hardware
 ├── providers/                   # Provedores de IA
-│   ├── BaseLLMProvider.ts       # Base com timing e métricas automáticas
-│   ├── ProviderFactory.ts       # Factory via configuração
+│   ├── BaseLLMProvider.ts       # Base com timing, tokens locais e hardware before/after
+│   ├── ProviderFactory.ts       # Factory + ModelInfoProvider via configuração
 │   └── providers/
 │       ├── GroqProvider.ts      # Extrai tokens do response_metadata
 │       └── OllamaProvider.ts    # Extrai tokens do formato Ollama
@@ -112,13 +130,17 @@ src/
 │   └── botPrompts.ts            # Prompts com chain-of-thought e memória
 ├── schemas/
 │   └── botAction.ts             # Schema Zod com campo "raciocinio" e novas ações
+├── scripts/
+│   └── exportMetrics.ts         # Exporta métricas para CSV/JSON
 ├── types/
-│   └── types.ts                 # Interfaces completas (GameContext, MemoryEntry, etc.)
+│   └── types.ts                 # Interfaces completas (GameContext, MemoryEntry, métricas, sessão, etc.)
 ├── utils/
 │   ├── db.ts                    # Prisma singleton
-│   ├── jsonParser.ts            # Parse resiliente com jsonrepair
+│   ├── jsonParser.ts            # Parse resiliente com jsonrepair (retorna status)
+│   ├── ollamaModelInfo.ts       # Metadados do modelo via API Ollama
+│   ├── tokenCounter.ts          # Contagem local de tokens (gpt-tokenizer)
 │   └── sleep.ts
-└── index.ts                     # Bootstrap com graceful shutdown
+└── index.ts                     # Bootstrap com graceful shutdown e sessão
 ```
 
 ## 🎮 Como Funciona
@@ -129,6 +151,8 @@ O bot opera em um ciclo de 4 etapas a cada 3 segundos:
 2. **Memória** 🗂️ — Injeta no prompt as últimas 15 entradas do ring buffer (ações, eventos, interações)
 3. **Raciocínio** 🧠 — Envia contexto + memória ao LLM; o modelo retorna JSON com `raciocinio` e `acao`
 4. **Ação** 🎯 — Executa a ação, registra resultado na memória e enfileira métricas
+
+Cada execução do bot cria uma **sessão de experimento** que agrupa todas as métricas, eventos de parse JSON e eventos de conexão.
 
 ## 🤝 Ações Disponíveis
 
@@ -145,6 +169,137 @@ O bot opera em um ciclo de 4 etapas a cada 3 segundos:
 | `COLETAR` | Minera/coleta bloco próximo |
 | `ATACAR` | Ataca entidade próxima |
 | `NADA` | Apenas observa |
+
+## 🎯 Modo Benchmark
+
+Executa cenários fixos contra o modelo LLM **sem precisar de servidor Minecraft**. Ideal para comparar modelos, quantizações e hardwares de forma reproduzível.
+
+### Executando
+
+```bash
+# Benchmark com configuração padrão (3 warm-up + 10 reps x 15 cenários)
+pnpm benchmark
+
+# Configuração customizada
+pnpm benchmark --reps 20 --warmup 5
+```
+
+### Como funciona
+
+1. **Warm-up**: N rodadas de aquecimento (métricas descartadas) para eliminar cold start
+2. **Sessão**: Cria uma `ExperimentSession` no banco com metadados do modelo e hardware
+3. **Cenários**: 15 cenários padronizados cobrindo sobrevivência, social, exploração, combate e anti-loop
+4. **Registro**: Cada resposta do modelo gera métricas de LLM, evento de parse JSON e validação da ação
+
+### Cenários incluídos
+
+| Categoria | Exemplos | Ação esperada |
+|-----------|----------|---------------|
+| Sobrevivência | Vida baixa + mob perto | FUGIR |
+| Sobrevivência | Vida baixa + sem mobs | FALAR, COLETAR |
+| Social | Jogador falou no chat | FALAR |
+| Social | Jogador perto sem interação | SEGUIR, OLHAR, FALAR |
+| Exploração | Inventário vazio | COLETAR, EXPLORAR |
+| Exploração | Blocos interessantes perto | COLETAR |
+| Anti-loop | 3x ANDAR seguido | Qualquer exceto ANDAR |
+| Combate | Mob hostil próximo | ATACAR, FUGIR |
+| Inatividade | Tudo calmo + inventário cheio | EXPLORAR, FALAR |
+
+### Resultado
+
+O benchmark imprime um resumo com taxa de acerto, taxa de JSON válido/reparado/falho e tempo médio de resposta. Todos os dados ficam no banco, filtrável por sessão.
+
+## 📊 Métricas e Sessões
+
+### Dados coletados automaticamente
+
+| Tabela | O que armazena |
+|--------|----------------|
+| `ExperimentSession` | Sessão completa: modelo, quantização, hardware, contadores de JSON válido/reparado/falho |
+| `Metric` | Cada chamada LLM: tokens (provider + local), tokens/segundo, tempo de resposta, hardware antes/depois |
+| `ActionMetric` | Cada ação do bot: tipo, sucesso/falha, tempo de execução |
+| `ParseEvent` | Cada tentativa de parse JSON: status, resposta bruta, erro |
+| `ConnectionEvent` | Conexões, desconexões, kicks, mortes — com timestamp e motivo |
+
+### Tokenizer local
+
+O sistema usa `gpt-tokenizer` (cl100k_base) para contagem de tokens **independente do provider**. Isso garante comparações justas entre Ollama, Groq e qualquer outro provider — cada um reporta tokens de forma diferente, mas a contagem local é sempre consistente.
+
+Campos no banco:
+- `inputTokens` / `outputTokens` — do provider (pode ser `null`)
+- `localInputTokens` / `localOutputTokens` — sempre presente
+- `tokensPerSecond` — calculado: `localOutputTokens / (responseTime)`
+
+### Metadados do modelo (Ollama)
+
+Para o provider Ollama, metadados são capturados automaticamente via API:
+- **Família** (qwen3, llama, etc.)
+- **Tamanho** (8B, 70B, etc.)
+- **Quantização** (Q4_K_M, Q8_0, etc.)
+- **VRAM alocada** (via `/api/ps`)
+- **Tamanho do contexto**
+
+### Visualização
+
+```bash
+pnpm db:studio   # abre Prisma Studio no browser para visualizar os dados
+```
+
+## 📤 Exportação de Dados
+
+Exporta métricas para CSV e JSON, prontas para análise com pandas/matplotlib.
+
+```bash
+# Exporta tudo
+pnpm metrics:export
+
+# Filtra por sessão
+pnpm metrics:export --session <id>
+
+# Filtra por modelo
+pnpm metrics:export --model qwen3
+
+# Apenas summary JSON (sem CSVs)
+pnpm metrics:summary
+```
+
+### Arquivos gerados em `exports/`
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `sessions.csv` | Uma linha por sessão |
+| `llm_metrics.csv` | Uma linha por chamada LLM |
+| `action_metrics.csv` | Uma linha por ação executada |
+| `parse_events.csv` | Uma linha por tentativa de parse |
+| `connection_events.csv` | Uma linha por evento de conexão |
+| `summary.json` | Agregações por sessão (médias, medianas, percentis, distribuição de ações) |
+
+### Formato do `summary.json`
+
+```json
+{
+  "session_id": "...",
+  "model": "qwen3:8b",
+  "quantization": "Q4_K_M",
+  "hardware": "AMD Ryzen 5 5600X + RTX 3060",
+  "total_cycles": 150,
+  "metrics": {
+    "avg_tokens_per_second": 42.3,
+    "median_tokens_per_second": 41.8,
+    "p95_response_time_ms": 2340,
+    "avg_response_time_ms": 1850,
+    "json_valid_rate": 0.92,
+    "json_repaired_rate": 0.06,
+    "json_failed_rate": 0.02,
+    "avg_output_tokens": 85
+  },
+  "action_distribution": {
+    "EXPLORAR": 45,
+    "FALAR": 23,
+    "ANDAR": 18
+  }
+}
+```
 
 ## 🔌 Adicionando um Novo Provider
 
@@ -177,8 +332,9 @@ export class NovoProvider extends BaseLLMProvider {
 
 2. Adicione o `case` em `src/providers/ProviderFactory.ts`
 3. Adicione as configurações em `settings.ts` e `.env`
+4. (Opcional) Implemente `ModelInfoProvider` para capturar metadados do modelo automaticamente
 
-> Timing e enfileiramento de métricas são automáticos — o `BaseLLMProvider` cuida disso.
+> Timing, contagem local de tokens e enfileiramento de métricas são automáticos — o `BaseLLMProvider` cuida disso.
 
 ## 🎛️ Configurações
 
@@ -196,6 +352,12 @@ export const agentConfig = {
   shortTermMemorySize: 15,        // tamanho do ring buffer de memória
   perceptionBlockRadius: 8,       // raio de percepção de blocos
   perceptionEntityRadius: 16,     // raio de percepção de entidades
+};
+
+export const benchmarkConfig = {
+  warmupRounds: 3,                // rodadas de warm-up
+  repetitionsPerScenario: 10,     // repetições por cenário
+  enabled: false,                 // ativado via BENCHMARK_MODE=true
 };
 ```
 
@@ -219,20 +381,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 - **Personalidade / raciocínio**: edite `src/prompts/botPrompts.ts`
 - **Validação de ações**: edite `src/schemas/botAction.ts`
 - **Percepção**: ajuste os raios em `agentConfig` ou edite `PerceptionManager.ts`
-
-## 📊 Métricas
-
-O sistema salva automaticamente em PostgreSQL:
-- **`Metric`**: latência, tokens (input/output), provider, modelo, snapshot de hardware
-- **`ActionMetric`**: tipo de ação, sucesso/falha, tempo de execução
-
-Métricas são acumuladas em memória e gravadas em lote (transação única) para minimizar I/O.
-
-```bash
-pnpm db:studio   # abre Prisma Studio no browser para visualizar os dados
-```
-
-Veja [prisma/implementacao.md](prisma/implementacao.md) para detalhes do sistema de métricas.
+- **Cenários de benchmark**: edite `src/benchmark/scenarios.json`
 
 ## 🐛 Solução de Problemas
 
@@ -253,10 +402,15 @@ Veja [prisma/implementacao.md](prisma/implementacao.md) para detalhes do sistema
 **Bot responde com JSON inválido (modelos locais)**
 - O `jsonParser` com `jsonrepair` tenta corrigir automaticamente
 - Se persistir, tente um modelo mais capaz ou ajuste o prompt em `botPrompts.ts`
+- Verifique a taxa de JSON válido/reparado/falho via `pnpm metrics:summary`
 
 **Bot preso em loop repetindo a mesma ação**
 - A memória de curto prazo é injetada no prompt exatamente para evitar isso
 - Verifique se o `MemoryManager` está sendo alimentado corretamente no `AgentLoop`
+
+**Benchmark mostra taxa de acerto baixa**
+- Modelos menores (< 7B) tendem a ter dificuldade com o formato JSON exigido
+- Tente ajustar o prompt ou usar uma quantização mais alta
 
 ## 📦 Dependências Principais
 
@@ -267,6 +421,7 @@ Veja [prisma/implementacao.md](prisma/implementacao.md) para detalhes do sistema
 | `@langchain/ollama` | Integração com Ollama |
 | `@prisma/client` | ORM para PostgreSQL |
 | `systeminformation` | Coleta de dados de hardware |
+| `gpt-tokenizer` | Contagem local de tokens (cl100k_base) |
 | `jsonrepair` | Reparo de JSON mal-formado |
 | `zod` | Validação de schemas |
 | `tsx` | Execução TypeScript (dev) |
@@ -286,4 +441,3 @@ MIT
 - [Groq](https://groq.com/)
 - [Neon PostgreSQL](https://neon.tech/)
 - [Modelos disponíveis (LangChain)](https://js.langchain.com/docs/integrations/chat/)
-
