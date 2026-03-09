@@ -67,7 +67,7 @@ BOT_USERNAME=AgenteBot
 BOT_AUTH=offline
 ```
 
-### 4. Setup do banco (obrigatório)
+### 4. Setup do banco (obrigatório no primeiro uso)
 
 ```bash
 pnpm db:generate   # gera o Prisma Client
