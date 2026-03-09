@@ -85,6 +85,11 @@ export class BotManager {
         const v = this.bot.entity.velocity;
         if (Math.abs(v.x) < 0.01 && Math.abs(v.z) < 0.01 && Math.random() > 0.7) {
           this.bot.setControlState('jump', true);
+          setTimeout(() => {
+            if (this.bot && this.isConnected()) {
+              this.bot.setControlState('jump', false);
+            }
+          }, 250);
         }
       }
     });
