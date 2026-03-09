@@ -117,7 +117,7 @@ export class MetricsBatcher {
               content: m.content,
               success: m.success,
               errorMessage: m.errorMessage,
-              executionTime: m.executionTimeMs,
+              executionTimeMs: m.executionTimeMs,
             },
           })
         ),
