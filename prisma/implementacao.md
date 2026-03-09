@@ -31,7 +31,7 @@ O sistema de métricas é responsável por coletar, armazenar e analisar dados d
 |---|---|---|
 | `action` | String | Tipo de ação (FALAR, ANDAR, PULAR, etc.) |
 | `success` | Boolean | Se a ação foi executada com sucesso |
-| `executionTime` | Float | Tempo de execução em ms |
+| `executionTimeMs` | Float | Tempo de execução em ms |
 | `errorMessage` | String? | Mensagem de erro, se houver |
 
 **Tabela `UserBot`** — referência ao bot:
@@ -138,7 +138,7 @@ MetricsBatcher.getInstance().pushActionMetric({
   userBotId,
   action: result.action,
   success: result.success,
-  executionTimeMs: result.executionTime,
+  executionTimeMs: result.executionTimeMs,
 });
 ```
 
