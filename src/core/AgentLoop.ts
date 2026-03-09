@@ -27,6 +27,7 @@ export class AgentLoop {
   private memory: MemoryManager;
   private batcher: MetricsBatcher;
   private isRunning = false;
+  private listenersAttached = false;
 
   constructor(botManager: BotManager, provider: LLMProvider) {
     this.botManager = botManager;
@@ -125,7 +126,6 @@ export class AgentLoop {
         taskName: 'action_decision',
       });
 
-      // Parse com jsonrepair — tolera JSON malformado de modelos locais
       const { data, error, repaired } = safeParseJSON(response.content);
 
       if (!data || error) {
@@ -153,29 +153,34 @@ export class AgentLoop {
 
     this.executor = new ActionExecutor(bot);
     this.perception = new PerceptionManager(bot);
-    this.memory.clear();
-    this.memory.recordEvent('Conectado ao servidor');
 
-    // Registra mensagens de chat na memória
-    bot.on('chat', (user, msg) => {
-      if (user === bot.username) return;
-      this.memory.recordInteraction(user, msg);
-    });
+    if (!this.listenersAttached) {
+      this.listenersAttached = true;
+      this.memory.clear();
+      this.memory.recordEvent('Conectado ao servidor');
 
-    // Registra eventos de vida
-    bot.on('health', () => {
-      if (bot.health < 8) {
-        this.memory.recordEvent(`Vida baixa: ${bot.health.toFixed(0)}/20`);
-      }
-    });
+      bot.on('chat', (user, msg) => {
+        if (user === bot.username) return;
+        this.memory.recordInteraction(user, msg);
+      });
 
-    bot.on('death', () => {
-      this.memory.recordEvent('Morri! Respawnando...');
-    });
+      bot.on('health', () => {
+        if (bot.health < 8) {
+          this.memory.recordEvent(`Vida baixa: ${bot.health.toFixed(0)}/20`);
+        }
+      });
+
+      bot.on('death', () => {
+        this.memory.recordEvent('Morri! Respawnando...');
+      });
+    } else {
+      this.memory.recordEvent('Respawnei');
+    }
   }
 
   private onDisconnected(): void {
     this.executor = null;
     this.perception = null;
+    this.listenersAttached = false;
   }
 }
