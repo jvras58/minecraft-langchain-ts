@@ -8,7 +8,7 @@ export interface BotConfig {
 }
 
 // ─── Actions (fonte da verdade: Zod schema) ──────────────
-export type { BotAction as BotAction } from '../schemas/botAction';
+export type { BotAction } from '../schemas/botAction';
 
 // ─── Perception ───────────────────────────────────────────────
 export interface GameContext {
