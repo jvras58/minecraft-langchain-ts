@@ -30,15 +30,20 @@ Utilizamos o **PaperMC**, que é o "motor" do mundo.
 
 1.  Troque a versão do Paper se preferir [PaperMC](https://papermc.io/downloads/paper).
 2.  a pasta chamada `ServidorMinecraft` tem o arquivo `.jar` lá dentro ou se preferir trocar so colocar lá com o mesmo nome.
-3.  Já temos o `start.bat` na mesma pasta com o conteúdo:
-    ```bat
+3.  No Linux há um `start.sh` na mesma pasta com o conteúdo:
+    ```bash
     java -Xms4G -Xmx4G -jar paper.jar
-    pause
     ```
-    (Nota: Removemos a flag `--nogui` para visualizar a interface do servidor)*
-4.  Rode o `start.bat`  O servidor vai fechar sozinho se for a primeira vez.
-5.  Abra o arquivo `eula.txt` criado e mude para `eula=true`.
-6.  o `4G` define o quanto o java pode usar de memoria (use a documentação do Paper para entender melhor...)
+    Antes de rodar, dê permissão de execução:
+    ```bash
+    chmod +x start.sh
+    ./start.sh
+    ```
+    (O servidor vai fechar sozinho se for a primeira vez; isso cria o arquivo `eula.txt`.)
+
+    No Windows, rode o `start.bat` em vez disso. O servidor também fecha após a primeira execução.
+4.  Abra o arquivo `eula.txt` criado e mude para `eula=true`.
+5.  o `4G` define o quanto o java pode usar de memoria (use a documentação do Paper para entender melhor...)
 
 ### 2\. Configuração de Rede e Acesso
 
