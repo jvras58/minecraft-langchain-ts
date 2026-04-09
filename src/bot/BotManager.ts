@@ -2,6 +2,7 @@ import mineflayer, { Bot } from 'mineflayer';
 import { BotConfig } from '../types/types';
 import { MovementManager } from './MovementManager';
 import { getOrCreateUserBot } from '../utils/userBot';
+import { MetricsBatcher } from '../metrics/MetricsBatcher';
 
 export class BotManager {
   private bot: Bot | null = null;
@@ -10,6 +11,7 @@ export class BotManager {
   private onConnected?: () => void;
   private onDisconnected?: () => void;
   public userBotId: string | null = null;
+  public onConnectionEvent?: (eventType: 'connected' | 'disconnected' | 'reconnected' | 'kicked' | 'death', reason?: string) => void;
 
   constructor(config: BotConfig) {
     this.config = config;
@@ -68,6 +70,7 @@ export class BotManager {
 
     this.bot.on('kicked', (reason) => {
       console.log(`👢 Kickado: ${reason}`);
+      this.onConnectionEvent?.('kicked', typeof reason === 'string' ? reason : JSON.stringify(reason));
     });
 
     // Auto-pulo quando preso

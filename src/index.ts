@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { createLLMProvider } from './providers/ProviderFactory';
+import { createLLMProvider, createModelInfoProvider } from './providers/ProviderFactory';
 import { botConfig } from './config/settings';
 import { BotManager } from './bot/BotManager';
 import { AgentLoop } from './core/AgentLoop';
@@ -11,8 +11,9 @@ async function main(): Promise<void> {
   console.log('🤖 Iniciando Bot de Minecraft com IA...\n');
 
   const provider = createLLMProvider();
+  const modelInfoProvider = createModelInfoProvider();
   const botManager = new BotManager(botConfig);
-  const agent = new AgentLoop(botManager, provider);
+  const agent = new AgentLoop(botManager, provider, modelInfoProvider);
 
   const shutdown = async () => {
     console.log('\n🛑 Encerrando...');
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
   await botManager.createBot();
   await sleep(2000);
 
-  agent.start();
+  await agent.start();
 }
 
 main().catch((err) => {

@@ -1,23 +1,6 @@
 import * as si from 'systeminformation';
-import { HardwareSnapshot } from '../types/types';
+import { HardwareSnapshot, DynamicHardwareInfo, StaticHardwareInfo } from '../types/types';
 import { metricsConfig } from '../config/settings';
-
-interface StaticInfo {
-  cpuName: string;
-  gpuName: string | null;
-  os: string;
-  cpu: { manufacturer: string; brand: string; cores: number; speed: number };
-  memory: { total: number };
-  gpu: Array<{ model: string; vendor: string; vram: number | null }>;
-}
-
-interface DynamicInfo {
-  cpuUsage: number;
-  ramUsed: number;
-  ramFree: number;
-  gpuUsage: number | null;
-  gpuTemp: number | null;
-}
 
 /**
  * Coleta dados de hardware com cache agressivo.
@@ -26,11 +9,11 @@ interface DynamicInfo {
  */
 export class HardwareMonitor {
   private static instance: HardwareMonitor;
-  private staticInfo: StaticInfo | null = null;
-  private dynamicInfo: DynamicInfo | null = null;
+  private staticInfo: StaticHardwareInfo | null = null;
+  private dynamicInfo: DynamicHardwareInfo | null = null;
   private lastDynamicTime = 0;
-  private staticInfoPromise: Promise<StaticInfo> | null = null;
-  private dynamicInfoPromise: Promise<DynamicInfo> | null = null;
+  private staticInfoPromise: Promise<StaticHardwareInfo> | null = null;
+  private dynamicInfoPromise: Promise<DynamicHardwareInfo> | null = null;
 
   static getInstance(): HardwareMonitor {
     if (!HardwareMonitor.instance) {
@@ -39,9 +22,10 @@ export class HardwareMonitor {
     return HardwareMonitor.instance;
   }
 
+  /** Snapshot completo (estático + dinâmico) para métricas de LLM. */
   async getSnapshot(): Promise<HardwareSnapshot> {
-    const s = await this.getStatic();
-    const d = await this.getDynamic();
+    const s = await this.getStaticSnapshot();
+    const d = await this.getDynamicSnapshot();
 
     return {
       cpuName: s.cpuName,
@@ -56,7 +40,17 @@ export class HardwareMonitor {
     };
   }
 
-  private getStatic(): Promise<StaticInfo> {
+  /** Snapshot estático — coletado 1x por sessão. */
+  async getStaticSnapshot(): Promise<StaticHardwareInfo> {
+    return this.getStatic();
+  }
+
+  /** Snapshot dinâmico — para captura antes/depois de inferência. */
+  async getDynamicSnapshot(): Promise<DynamicHardwareInfo> {
+    return this.getDynamic();
+  }
+
+  private getStatic(): Promise<StaticHardwareInfo> {
     if (this.staticInfo) return Promise.resolve(this.staticInfo);
     if (this.staticInfoPromise) return this.staticInfoPromise;
 
@@ -86,7 +80,7 @@ export class HardwareMonitor {
     return this.staticInfoPromise;
   }
 
-  private getDynamic(): Promise<DynamicInfo> {
+  private getDynamic(): Promise<DynamicHardwareInfo> {
     const now = performance.now();
     if (this.dynamicInfo && now - this.lastDynamicTime < metricsConfig.hardwarePollIntervalMs) {
       return Promise.resolve(this.dynamicInfo);

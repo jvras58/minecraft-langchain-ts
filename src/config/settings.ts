@@ -41,3 +41,12 @@ export const agentConfig = {
   /** Raio de percepção para entidades (em blocos) */
   perceptionEntityRadius: 16,
 };
+
+export const benchmarkConfig = {
+  /** Número de rodadas de warm-up antes do benchmark */
+  warmupRounds: parseInt(process.env.WARMUP_ROUNDS || '3'),
+  /** Número de repetições por cenário */
+  repetitionsPerScenario: parseInt(process.env.BENCHMARK_REPS || '10'),
+  /** Se o modo benchmark está habilitado */
+  enabled: process.env.BENCHMARK_MODE === 'true',
+};

@@ -71,6 +71,7 @@ export interface InvokeOptions {
   temperature?: number;
   maxTokens?: number;
   userBotId?: string;
+  sessionId?: string;
   taskName?: string;
 }
 
@@ -95,13 +96,21 @@ export interface LLMMetricData {
   model: string;
   inputTokens?: number;
   outputTokens?: number;
+  localInputTokens?: number;
+  localOutputTokens?: number;
+  tokensPerSecond?: number;
+  totalTokens?: number;
   responseTimeMs: number;
   userBotId: string;
+  sessionId?: string;
   taskName?: string;
+  hardwareBefore?: DynamicHardwareInfo;
+  hardwareAfter?: DynamicHardwareInfo;
 }
 
 export interface ActionMetricData {
   userBotId: string;
+  sessionId?: string;
   action: string;
   direction?: string;
   content?: string;
@@ -110,9 +119,63 @@ export interface ActionMetricData {
   executionTimeMs: number;
 }
 
+export interface ParseEventData {
+  sessionId?: string;
+  status: 'valid' | 'repaired' | 'failed';
+  rawResponse?: string;
+  errorMessage?: string;
+}
+
+export interface ConnectionEventData {
+  sessionId?: string;
+  eventType: 'connected' | 'disconnected' | 'reconnected' | 'kicked' | 'death';
+  reason?: string;
+}
+
+export interface DynamicHardwareInfo {
+  cpuUsage: number;
+  ramUsed: number;
+  ramFree: number;
+  gpuUsage: number | null;
+  gpuTemp: number | null;
+}
+
+export interface StaticHardwareInfo {
+  cpuName: string;
+  gpuName: string | null;
+  os: string;
+  cpu: { manufacturer: string; brand: string; cores: number; speed: number };
+  memory: { total: number };
+  gpu: Array<{ model: string; vendor: string; vram: number | null }>;
+}
+
 export interface HardwareSnapshot {
   cpuName: string;
   gpuName: string | null;
   os: string;
-  environment: Record<string, unknown>; // JSON nativo no PostgreSQL — sem stringify
+  environment: Record<string, unknown>;
+}
+
+// ─── Model Info ───────────────────────────────────────────────
+export interface ModelDetails {
+  family: string;
+  parameterSize: string;
+  quantization: string;
+  sizeBytes: number;
+  contextLength: number;
+  vramAllocated?: number;
+}
+
+export interface ModelInfoProvider {
+  getModelDetails(): Promise<Partial<ModelDetails> | null>;
+}
+
+// ─── Session ──────────────────────────────────────────────────
+export interface SessionConfig {
+  provider: string;
+  model: string;
+  userBotId: string;
+  mode?: 'gameplay' | 'benchmark';
+  notes?: string;
+  modelInfoProvider?: ModelInfoProvider;
 }
