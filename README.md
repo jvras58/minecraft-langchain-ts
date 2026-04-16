@@ -19,7 +19,6 @@ Bot inteligente para Minecraft com arquitetura modular, memória de curto prazo 
 
 - Node.js 20+
 - Servidor Minecraft Java Edition rodando (local ou remoto)
-- Banco PostgreSQL — recomendado [Neon](https://console.neon.tech) (free tier)
 - Chave da API do Groq ([obtenha aqui](https://console.groq.com/keys)) **ou** Ollama instalado localmente
 
 ## 🔧 Instalação
