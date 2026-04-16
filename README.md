@@ -1,6 +1,6 @@
 # 🤖 Bot Autônomo de Minecraft com IA
 
-Bot inteligente para Minecraft com arquitetura modular, memória de curto prazo e sistema de métricas eficiente. Usa LangChain com provedores de IA intercambiáveis (Groq, Ollama, etc.) para tomar decisões autônomas no jogo.
+Bot inteligente para Minecraft com arquitetura modular, memória de curto prazo. Usa LangChain com provedores de IA intercambiáveis (Groq, Ollama, etc.) para tomar decisões autônomas no jogo.
 
 ## 🚀 Recursos
 
@@ -9,11 +9,8 @@ Bot inteligente para Minecraft com arquitetura modular, memória de curto prazo 
 - 🔗 **Chain-of-thought** — Campo `raciocinio` no JSON força raciocínio antes de agir
 - 🔌 **Providers intercambiáveis** — Groq, Ollama ou qualquer LLM via `BaseLLMProvider`
 - 👁️ **Percepção enriquecida** — Inventário, entidades, blocos próximos, bioma e clima
-- 📊 **Métricas em lote** — `MetricsBatcher` reduz ~95% do I/O no banco
-- 🗃️ **PostgreSQL (Neon)** — Banco cloud para métricas acessíveis remotamente
 - 🔧 **JSON resiliente** — `jsonrepair` corrige saídas quebradas de modelos locais
 - 🔄 **Reconexão automática** — Se cair, reconecta sozinho
-- 🎮 **Novas ações** — SEGUIR, FUGIR, COLETAR, ATACAR
 
 ## 📋 Pré-requisitos
 
