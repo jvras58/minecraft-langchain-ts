@@ -4,7 +4,6 @@ import {
   LLMProvider,
   LLMResponse,
 } from '../types/types';
-import { MetricsBatcher } from '../metrics/MetricsBatcher';
 
 /**
  * Classe base para provedores de LLM.
@@ -39,21 +38,6 @@ export abstract class BaseLLMProvider implements LLMProvider {
     const result = await this.callModel(messages, options);
 
     const responseTimeMs = performance.now() - start;
-
-    // Enfileira métrica sem bloquear (fire-and-forget)
-    if (options?.userBotId) {
-      MetricsBatcher.getInstance()
-        .pushLLMMetric({
-          provider: this.providerName,
-          model: this.modelName,
-          inputTokens: result.inputTokens,
-          outputTokens: result.outputTokens,
-          responseTimeMs,
-          userBotId: options.userBotId,
-          taskName: options.taskName,
-        })
-        .catch((err) => console.error('Erro ao enfileirar métrica LLM:', err));
-    }
 
     return {
       content: result.content,

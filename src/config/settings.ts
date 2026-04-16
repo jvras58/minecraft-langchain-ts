@@ -20,15 +20,6 @@ export const llmConfig = {
   },
 };
 
-export const metricsConfig = {
-  /** Intervalo em ms para flush de métricas em lote */
-  batchFlushIntervalMs: 10_000,
-  /** Tamanho máximo do lote antes de forçar flush */
-  batchMaxSize: 20,
-  /** Intervalo mínimo entre coletas de métricas dinâmicas de hardware */
-  hardwarePollIntervalMs: 5_000,
-};
-
 export const agentConfig = {
   /** Intervalo entre ciclos do loop principal (ms) */
   loopIntervalMs: 3_000,

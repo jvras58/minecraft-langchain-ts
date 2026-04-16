@@ -7,10 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "type-check": "tsc --noEmit",
-    "db:push": "npx prisma db push",
-    "db:generate": "npx prisma generate",
-    "db:studio": "npx prisma studio"
+    "type-check": "tsc --noEmit"
   },
   "keywords": ["minecraft", "bot", "ai", "langchain", "autonomous-agent"],
   "license": "MIT",
@@ -18,7 +15,6 @@
     "@langchain/core": "^0.3.0",
     "@langchain/groq": "^0.1.0",
     "@langchain/ollama": "^1.1.0",
-    "@prisma/client": "^6.19.0",
     "dotenv": "^17.2.3",
     "mineflayer": "^4.20.1",
     "jsonrepair": "^3.11.3",

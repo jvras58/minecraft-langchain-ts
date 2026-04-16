@@ -46,9 +46,6 @@ cp .env.example .env
 Edite o `.env`:
 
 ```env
-# Banco de Dados (Neon PostgreSQL)
-DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/dbname?sslmode=require
-
 # Provedor de IA
 LLM_PROVIDER=groq  # ou 'ollama'
 
@@ -67,17 +64,8 @@ BOT_USERNAME=AgenteBot
 BOT_AUTH=offline
 ```
 
-### 4. Setup do banco (obrigatório no primeiro uso)
 
-```bash
-pnpm db:generate   # gera o Prisma Client
-pnpm db:push       # cria as tabelas no PostgreSQL
-```
-
-> [!IMPORTANT]
-> Esses comandos são **obrigatórios** antes da primeira execução. `db:generate` deve ser reexecutado sempre que o `schema.prisma` for alterado.
-
-### 5. Execute
+### 4. Execute
 
 ```bash
 pnpm dev       # desenvolvimento (hot reload)
@@ -99,9 +87,6 @@ src/
 ├── core/                        # Lógica principal
 │   ├── AgentLoop.ts             # Loop: Percepção → Memória → Raciocínio → Ação
 │   └── MemoryManager.ts         # Memória de curto prazo (ring buffer)
-├── metrics/                     # Sistema de métricas
-│   ├── MetricsBatcher.ts        # Fila em memória com flush em lote
-│   └── HardwareMonitor.ts       # Snapshot de hardware com cache agressivo
 ├── providers/                   # Provedores de IA
 │   ├── BaseLLMProvider.ts       # Base com timing e métricas automáticas
 │   ├── ProviderFactory.ts       # Factory via configuração
@@ -115,7 +100,6 @@ src/
 ├── types/
 │   └── types.ts                 # Interfaces completas (GameContext, MemoryEntry, etc.)
 ├── utils/
-│   ├── db.ts                    # Prisma singleton
 │   ├── jsonParser.ts            # Parse resiliente com jsonrepair
 │   └── sleep.ts
 └── index.ts                     # Bootstrap com graceful shutdown
@@ -185,11 +169,6 @@ export class NovoProvider extends BaseLLMProvider {
 Todas as configurações ficam em `src/config/settings.ts`:
 
 ```typescript
-export const metricsConfig = {
-  batchFlushIntervalMs: 10_000,   // flush a cada 10s
-  batchMaxSize: 20,               // ou ao acumular 20 itens
-  hardwarePollIntervalMs: 5_000,  // throttle do HardwareMonitor
-};
 
 export const agentConfig = {
   loopIntervalMs: 3_000,          // intervalo entre ciclos
@@ -220,19 +199,6 @@ OLLAMA_BASE_URL=http://localhost:11434
 - **Validação de ações**: edite `src/schemas/botAction.ts`
 - **Percepção**: ajuste os raios em `agentConfig` ou edite `PerceptionManager.ts`
 
-## 📊 Métricas
-
-O sistema salva automaticamente em PostgreSQL:
-- **`Metric`**: latência, tokens (input/output), provider, modelo, snapshot de hardware
-- **`ActionMetric`**: tipo de ação, sucesso/falha, tempo de execução
-
-Métricas são acumuladas em memória e gravadas em lote (transação única) para minimizar I/O.
-
-```bash
-pnpm db:studio   # abre Prisma Studio no browser para visualizar os dados
-```
-
-Veja [prisma/implementacao.md](prisma/implementacao.md) para detalhes do sistema de métricas.
 
 ## 🐛 Solução de Problemas
 
@@ -284,6 +250,5 @@ MIT
 - [Mineflayer](https://github.com/PrismarineJS/mineflayer)
 - [LangChain JS](https://js.langchain.com/)
 - [Groq](https://groq.com/)
-- [Neon PostgreSQL](https://neon.tech/)
 - [Modelos disponíveis (LangChain)](https://js.langchain.com/docs/integrations/chat/)
 

@@ -17,9 +17,6 @@ importers:
       '@langchain/ollama':
         specifier: ^1.1.0
         version: 1.1.0(@langchain/core@0.3.79(openai@4.104.0(zod@4.1.13)))
-      '@prisma/client':
-        specifier: ^6.19.0
-        version: 6.19.1(prisma@6.19.1(typescript@5.9.3))(typescript@5.9.3)
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -239,18 +236,6 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       '@langchain/core': '>=0.3.29 <0.4.0'
-
-  '@prisma/client@6.19.1':
-    resolution: {integrity: sha512-4SXj4Oo6HyQkLUWT8Ke5R0PTAfVOKip5Roo+6+b2EDTkFg5be0FnBWiuRJc0BC0sRQIWGMLKW1XguhVfW/z3/A==}
-    engines: {node: '>=18.18'}
-    peerDependencies:
-      prisma: '*'
-      typescript: '>=5.1.0'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-      typescript:
-        optional: true
 
   '@prisma/config@6.19.1':
     resolution: {integrity: sha512-bUL/aYkGXLwxVGhJmQMtslLT7KPEfUqmRa919fKI4wQFX4bIFUKiY8Jmio/2waAjjPYrtuDHa7EsNCnJTXxiOw==}
@@ -1110,11 +1095,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - ws
-
-  '@prisma/client@6.19.1(prisma@6.19.1(typescript@5.9.3))(typescript@5.9.3)':
-    optionalDependencies:
-      prisma: 6.19.1(typescript@5.9.3)
-      typescript: 5.9.3
 
   '@prisma/config@6.19.1':
     dependencies:

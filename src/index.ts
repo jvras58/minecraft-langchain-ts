@@ -4,7 +4,6 @@ import { createLLMProvider } from './providers/ProviderFactory';
 import { botConfig } from './config/settings';
 import { BotManager } from './bot/BotManager';
 import { AgentLoop } from './core/AgentLoop';
-import { MetricsBatcher } from './metrics/MetricsBatcher';
 import { sleep } from './utils/sleep';
 
 async function main(): Promise<void> {
@@ -30,5 +29,4 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   console.error('❌ Erro fatal:', err);
-  MetricsBatcher.getInstance().flush().finally(() => process.exit(1));
 });

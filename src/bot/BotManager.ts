@@ -1,7 +1,6 @@
 import mineflayer, { Bot } from 'mineflayer';
 import { BotConfig } from '../types/types';
 import { MovementManager } from './MovementManager';
-import { getOrCreateUserBot } from '../utils/userBot';
 
 export class BotManager {
   private bot: Bot | null = null;
@@ -22,7 +21,6 @@ export class BotManager {
 
   async createBot(): Promise<void> {
     console.log('🔌 Conectando ao servidor...');
-    this.userBotId = await getOrCreateUserBot(this.config.username);
     this.bot = mineflayer.createBot(this.config);
     this.setupEvents();
   }

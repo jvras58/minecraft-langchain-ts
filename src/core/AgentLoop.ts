@@ -5,7 +5,6 @@ import { PerceptionManager } from '../bot/PerceptionManager';
 import { MemoryManager } from '../core/MemoryManager';
 import { botActionSchema } from '../schemas/botAction';
 import { botPromptTemplate } from '../prompts/botPrompts';
-import { MetricsBatcher } from '../metrics/MetricsBatcher';
 import { sleep } from '../utils/sleep';
 import { safeParseJSON } from '../utils/jsonParser';
 import { agentConfig } from '../config/settings';
@@ -25,7 +24,6 @@ export class AgentLoop {
   private executor: ActionExecutor | null = null;
   private perception: PerceptionManager | null = null;
   private memory: MemoryManager;
-  private batcher: MetricsBatcher;
   private isRunning = false;
   private listenersAttached = false;
 
@@ -33,7 +31,6 @@ export class AgentLoop {
     this.botManager = botManager;
     this.provider = provider;
     this.memory = new MemoryManager();
-    this.batcher = MetricsBatcher.getInstance();
 
     this.botManager.setCallbacks(
       () => this.onConnected(),
@@ -45,13 +42,11 @@ export class AgentLoop {
     console.log('🧠 Agente ativado');
     console.log(`   Provider: ${this.provider.providerName} (${this.provider.modelName})`);
     this.isRunning = true;
-    this.batcher.start();
     this.loop();
   }
 
   async stop(): Promise<void> {
     this.isRunning = false;
-    await this.batcher.shutdown();
   }
 
   private async loop(): Promise<void> {
@@ -84,16 +79,6 @@ export class AgentLoop {
           result.direction || result.content || undefined,
         );
 
-        // 5. MÉTRICA DE AÇÃO (enfileirada, sem I/O)
-        this.batcher.pushActionMetric({
-          userBotId: this.botManager.userBotId,
-          action: result.action,
-          direction: result.direction,
-          content: result.content,
-          success: result.success,
-          errorMessage: result.errorMessage,
-          executionTimeMs: result.executionTimeMs,
-        });
 
         if (!result.success) {
           console.log(`⚠️  ${result.action} falhou: ${result.errorMessage}`);
@@ -159,7 +144,7 @@ export class AgentLoop {
       this.memory.clear();
       this.memory.recordEvent('Conectado ao servidor');
 
-      bot.on('chat', (user, msg) => {
+      bot.on('chat', (user: string, msg: string) => {
         if (user === bot.username) return;
         this.memory.recordInteraction(user, msg);
       });
